@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "start_with_windows": false,
+  "start_minimized": false,
+  "close_to_tray": true,
+  "notifications": true,
+  "bindings": [
+    {
+      "id": "ex01",
+      "name": "示例：终端 1",
+      "hotkey": "Ctrl+Alt+1",
+      "enabled": false,
+      "process": "WindowsTerminal.exe",
+      "title": "",
+      "window_class": "",
+      "exclude_title": "",
+      "index": 1,
+      "override": true,
+      "when": "activate",
+      "launch": "",
+      "launch_cwd": "",
+      "wait_seconds": 8
+    },
+    {
+      "id": "ex02",
+      "name": "示例：VS Code 项目",
+      "hotkey": "Ctrl+Alt+2",
+      "enabled": false,
+      "process": "Code.exe",
+      "title": "项目名",
+      "window_class": "",
+      "exclude_title": "",
+      "index": 0,
+      "override": true,
+      "when": "activateOrLaunch",
+      "launch": "code D:\\proj",
+      "launch_cwd": "D:\\proj",
+      "wait_seconds": 12
+    }
+  ]
+}

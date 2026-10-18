@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "start_with_windows": false,
+  "start_minimized": false,
+  "close_to_tray": true,
+  "notifications": false,
+  "bindings": [
+    {
+      "id": "smoke1",
+      "name": "VS Code",
+      "hotkey": "Ctrl+Alt+Shift+F9",
+      "enabled": true,
+      "process": "Code.exe",
+      "title": "quickswitch",
+      "window_class": "",
+      "exclude_title": "",
+      "index": 0,
+      "override": true,
+      "when": "activateOrLaunch",
+      "launch": "code .",
+      "launch_cwd": "",
+      "wait_seconds": 12
+    },
+    {
+      "id": "smoke2",
+      "name": "终端 1",
+      "hotkey": "Ctrl+Alt+Shift+F10",
+      "enabled": true,
+      "process": "WindowsTerminal.exe",
+      "title": "",
+      "window_class": "",
+      "exclude_title": "",
+      "index": 1,
+      "override": true,
+      "when": "activate",
+      "launch": "",
+      "launch_cwd": "",
+      "wait_seconds": 8
+    },
+    {
+      "id": "smoke3",
+      "name": "示例（未启用）",
+      "hotkey": "Ctrl+Alt+1",
+      "enabled": false,
+      "process": "Cursor.exe",
+      "title": "",
+      "window_class": "",
+      "exclude_title": "",
+      "index": 0,
+      "override": true,
+      "when": "activate",
+      "launch": "",
+      "launch_cwd": "",
+      "wait_seconds": 8
+    }
+  ]
+}

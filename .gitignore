@@ -1,0 +1,18 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# 用户自己的运行配置与日志
+config.json
+config.json.bak
+logs/
+
+# 临时/测试产物
+*.log
+tests/*.tmp
+
+# 本地无关目录
+.codex/
+
+# 本地截图（可能包含真实窗口标题，勿提交）
+/docs/

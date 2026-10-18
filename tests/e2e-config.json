@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "start_with_windows": false,
+  "start_minimized": false,
+  "close_to_tray": false,
+  "notifications": false,
+  "bindings": [
+    {
+      "id": "e2e-f9",
+      "name": "E2E F9",
+      "hotkey": "Ctrl+Alt+Shift+F9",
+      "enabled": true,
+      "process": "notepad.exe",
+      "title": "",
+      "window_class": "",
+      "exclude_title": "",
+      "index": 0,
+      "override": true,
+      "when": "activate",
+      "launch": "",
+      "launch_cwd": "",
+      "wait_seconds": 8
+    },
+    {
+      "id": "e2e-f10",
+      "name": "E2E F10（钩子覆盖）",
+      "hotkey": "Ctrl+Alt+Shift+F10",
+      "enabled": true,
+      "process": "notepad.exe",
+      "title": "",
+      "window_class": "",
+      "exclude_title": "",
+      "index": 0,
+      "override": true,
+      "when": "activate",
+      "launch": "",
+      "launch_cwd": "",
+      "wait_seconds": 8
+    }
+  ]
+}

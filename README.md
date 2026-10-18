@@ -1,0 +1,310 @@
+# QuickSwitch
+
+**English** · [简体中文](#中文说明)
+
+[![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-0078D4)](#requirements)
+[![Python](https://img.shields.io/badge/python-3.10%2B-3776AB)](#requirements)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
+A tiny Windows tray utility that binds **global hotkeys to specific windows** — IDEs, terminals, and AI agent windows — so that pressing `Ctrl+Alt+1` jumps straight to VS Code, `Ctrl+Alt+2` to the first terminal, `Ctrl+Alt+3` to the second one, and so on. If the window is not running yet, QuickSwitch can launch it for you and switch to it once it appears.
+
+## Why another window switcher?
+
+When you have a dozen windows open, switching means clicking the taskbar or cycling through `Alt+Tab`. The built-in `Win+1..9` only activates *taskbar-pinned apps* and cannot tell multiple windows of the same app apart; Windows Terminal's `Ctrl+1..9` only works inside one terminal window.
+
+Existing tools are close but not quite there:
+
+- [AutoHotkey](https://www.autohotkey.com/) is extremely flexible, but every scenario needs its own script;
+- [HotKeyP](https://freesoft-100.com/review/hotkeyp.html) and similar generic hotkey managers can bind window actions, but the UX is dated and there is no "match windows, cycle, launch when missing" workflow;
+- [fwin](https://github.com/doitian/fwin) is a search-then-switch picker, not a one-key shortcut.
+
+QuickSwitch is purpose-built for this workflow: pick a window, record a hotkey, done. And when a hotkey collides with a system or third-party shortcut, it can take it over with a low-level keyboard hook.
+
+## Features
+
+- **Global hotkeys to any window** — match by process name, title regex, window class, and window instance (fixed index or round-robin).
+- **Round-robin switching** — one hotkey rotates through several terminal or agent windows; a fixed index always jumps to the same one.
+- **Launch on demand** — when no window matches, run your command (`wt.exe ...`, `code D:\proj`, ...) and switch to the window once it appears.
+- **Conflict override** — if `RegisterHotKey` reports the combo is taken, QuickSwitch falls back to `WH_KEYBOARD_LL` and swallows the key before the system sees it (status shows "hook").
+- **Batch binding** — select multiple windows and generate `Ctrl+1, Ctrl+2, Ctrl+3...` bindings automatically.
+- **Hotkey recorder** — click "Record" and press the combo; no string syntax to remember.
+- **Tray, autostart, hot reload** — runs in the notification area, optional start on login, JSON config with live reload.
+- **Local-only and dependency-light** — Python + pywin32 + Tkinter; no telemetry, no network requests.
+
+## Requirements
+
+- Windows 10 or 11
+- Python 3.10+ with [pywin32](https://pypi.org/project/pywin32/) (`pip install -r requirements.txt`)
+- Pillow is optional, only used for icon generation and screenshots
+
+## Quick start
+
+1. Double-click **`QuickSwitch.vbs`** (starts silently, no console window). Use `run-console.cmd` if you want to see errors.
+2. In the main window: click **Refresh** on the right, select the target window, then click **Bind selected window**.
+3. In the editor, click **Record**, press the combo you want, and save. The hotkey is active immediately.
+4. Closing the window minimizes it to the tray; double-click the tray icon to bring it back.
+
+> Prefer `Ctrl+Alt+number` combos. A global `Ctrl+1` will also swallow the browser/IDE shortcut of the same name — QuickSwitch *can* override it, but you may not want to.
+
+> Screenshots are intentionally **not** committed to this repository: they would expose real window titles, which may contain personal or project information.
+
+## How conflict overriding works
+
+1. QuickSwitch first registers each combo with `RegisterHotKey`. On success the system delivers the key to QuickSwitch and no other app sees it.
+2. If the combo is already registered by Windows or another program (`ERROR_HOTKEY_ALREADY_REGISTERED`, 1409) and the binding has "override on conflict" enabled, QuickSwitch installs a `WH_KEYBOARD_LL` hook, swallows the key before hotkey processing, and performs the switch. Status becomes **hook**.
+3. Keys that **cannot** be overridden: `Ctrl+Alt+Del`, `Win+L`, and anything handled by the secure attention sequence. Fullscreen exclusive games may also ignore injected/hooked input.
+4. If the target app runs elevated, run QuickSwitch elevated too; otherwise UIPI may block input to that window.
+
+## Configuration
+
+The config lives next to the app in `config.json` (edit it from **File → Open config file** and press `Ctrl+R` to reload). See [config.example.json](config.example.json).
+
+```jsonc
+{
+  "version": 1,
+  "start_with_windows": false,   // write HKCU Run entry
+  "start_minimized": false,      // start hidden in the tray
+  "close_to_tray": true,
+  "notifications": true,
+  "bindings": [
+    {
+      "id": "terminal-1",
+      "name": "Terminal 1",
+      "hotkey": "Ctrl+Alt+1",
+      "enabled": true,
+      "process": "WindowsTerminal.exe", // glob patterns allowed: *Terminal*.exe
+      "title": "",                      // case-insensitive regular expression
+      "window_class": "",
+      "exclude_title": "",
+      "index": 1,          // 0 = cycle through matches; N = fixed Nth window (creation order)
+      "override": true,    // take over conflicting hotkeys via the keyboard hook
+      "when": "activate",  // activate | activateOrLaunch | launch
+      "launch": "",
+      "launch_cwd": "",
+      "wait_seconds": 8
+    }
+  ]
+}
+```
+
+| `when` | Behavior |
+| --- | --- |
+| `activate` | Switch to an existing window only; log a warning when none matches |
+| `activateOrLaunch` | Switch if found, otherwise run `launch` and wait for the window |
+| `launch` | Always start a new instance |
+
+## CLI
+
+```
+python QuickSwitch.pyw --selftest    # self-check: enumeration, hotkeys, hook, foreground, launch
+python QuickSwitch.pyw --hidden      # start minimized to tray
+```
+
+## Limitations
+
+- Tab-level switching (terminal tabs, browser tabs) is not supported — QuickSwitch activates windows only.
+- Secure attention keys (`Ctrl+Alt+Del`, `Win+L`) cannot be captured.
+- Elevation boundaries apply (UIPI).
+- Window matching relies on title/process/class; Electron titles change with open files, so use a stable project name in the title regex.
+- A standalone `.exe` can be built with PyInstaller; see the Chinese section for the command.
+
+## Development
+
+```
+python -m pytest tests -q            # 29 unit tests
+python -m quickswitch --selftest     # 25 self-check items
+python tests/gui_capture_qa.py       # GUI acceptance: dialogs, recorder, save
+python tests/e2e_hotkey_qa.py        # end-to-end: real keys → hotkey/hook → window switch
+```
+
+Project layout:
+
+```
+QuickSwitch.pyw          entry point (run with pythonw)
+QuickSwitch.vbs          silent launcher (double-click)
+run-console.cmd          launcher with console output
+quickswitch/
+  app.py                 Tkinter UI, event loop, switching/launching
+  hotkeys.py             message pump, RegisterHotKey, LL-hook override, tray
+  winapi.py              window enumeration, foreground activation, hook, startup, single instance
+  matcher.py             window matching and cycle/fixed-index selection
+  config.py              config model, load/save, validation
+  keys.py                hotkey string <-> virtual-key codes
+  selftest.py            --selftest implementation
+assets/quickswitch.ico   tray/window icon
+tests/                   unit tests, GUI/E2E QA scripts, fixtures
+```
+
+## License
+
+[MIT](LICENSE) © 2026 侯义林
+
+---
+
+## 中文说明
+
+[English](#quickswitch) · **简体中文**
+
+把每一个 IDE / Agent / 终端窗口绑到一个顺手的全局快捷键上：按 **Ctrl+Alt+1** 切到 VS Code，按 **Ctrl+Alt+2** 切到第一个终端，按 **Ctrl+Alt+3** 切到第二个终端……窗口没开时还能自动启动它。
+
+### 为什么做这个
+
+任务栏上的窗口一多，切换就要靠鼠标点，或者反复 `Alt+Tab` 找。系统自带的 `Win+1..9` 只能激活任务栏上固定的应用，同一个应用开多个窗口时没法区分；Windows Terminal 的 `Ctrl+1..9` 又只在终端内部有效。
+
+现成方案也不是没有：
+
+- [AutoHotkey](https://www.autohotkey.com/) 最灵活，但每个场景都要自己写脚本；
+- [HotKeyP](https://freesoft-100.com/review/hotkeyp.html) 这类通用热键工具可以绑定窗口操作，但配置界面偏老，且没有"窗口匹配 + 循环切换 + 找不到就启动"这套组合；
+- [fwin](https://github.com/doitian/fwin) 之类的窗口选择器是"先弹窗搜索再切换"，不是一键直达。
+
+QuickSwitch 就是把这个需求做成一个开箱即用的小工具：窗口列表里勾一下 → 录制快捷键 → 完成。冲突的系统快捷键可以选择用键盘钩子覆盖。
+
+### 特性
+
+- **全局快捷键直达任意窗口**：按进程名、标题正则、窗口类匹配，精确到某一个窗口实例。
+- **多窗口循环切换**：一个快捷键在多个终端窗口之间轮转；也可以固定切到第 N 个窗口。
+- **找不到就启动**：窗口没开时自动执行你配置的命令（如 `wt.exe ...`、`code D:\proj`），等窗口出现后自动切过去。
+- **冲突覆盖**：组合键被系统或其它软件占用时，自动切换到低级键盘钩子，在按键进入系统前拦下它（状态列显示"钩子接管"）。
+- **批量绑定**：一次选中多个窗口，自动生成 `Ctrl+1、Ctrl+2、Ctrl+3…`（或按 F 键递增）的绑定。
+- **快捷键录制**：点"录制"按下组合键即可，不用手写字符串。
+- **托盘运行 / 开机自启 / 配置文件热加载**，界面和日志全中文。
+- 纯 Python + pywin32 + Tkinter，无浏览器内核、无网络请求。
+
+### 环境要求
+
+- Windows 10 / 11
+- Python 3.10+，并安装 pywin32：`pip install -r requirements.txt`
+- Pillow 可选，仅用于生成图标和截图
+
+### 快速开始
+
+1. 双击 **`QuickSwitch.vbs`**（静默启动，不弹控制台；也可以双击 `run-console.cmd` 看报错）。
+2. 首次启动窗口里有三步提示：点右侧「刷新」→ 在「当前窗口」里选中目标窗口 → 点「绑定所选窗口」。
+3. 在编辑框里点「录制」，按下想用的组合键，保存。**立即生效**。
+4. 关闭窗口默认最小化到托盘，双击托盘图标可以再打开；托盘右键菜单里可以退出。
+
+> 快捷键建议优先选 `Ctrl+Alt+数字`：`Ctrl+数字` 全局生效后会抢掉浏览器切换标签页、IDE 里同类快捷键。
+
+> 仓库里不提交截图：截图会带出真实窗口标题，可能包含个人信息或项目信息。截图会在本地生成，已被 `.gitignore` 忽略。
+
+### 界面说明
+
+- **左侧「快捷键绑定」**：双击编辑，右键可"立即切换一次"，选中后按 `Delete` 删除。状态列含义：
+  - `已注册`：系统热键注册成功；
+  - `钩子接管`：与系统/其它程序冲突，已用键盘钩子覆盖；
+  - `冲突`：被占用且没有开启覆盖，换一个组合键；
+  - `错误`：快捷键或匹配规则无效（详情见运行日志）。
+- **右侧「当前窗口」**：按 Z 序列出可切换窗口，支持过滤；把鼠标停在某一行可以看完整标题、进程和类名。
+- **快捷键**：`Ctrl+S` 保存并应用、`Ctrl+R` 重新加载配置、`F5` 刷新窗口列表。
+
+### 热键冲突与"覆盖"的原理
+
+1. 先用 `RegisterHotKey` 注册组合键。成功时最稳：系统会把按键直接发给 QuickSwitch，不会再传给当前程序。
+2. 如果组合键已被别的程序注册（Windows 返回 1409），且该绑定勾选了"冲突时覆盖"，QuickSwitch 会安装 `WH_KEYBOARD_LL` 低级键盘钩子，在按键进入系统之前吞掉它，再执行切换。任务栏 `Win+数字` 之类的系统快捷键也可以用这种方式抢过来。
+3. **无法覆盖**：`Ctrl+Alt+Del`、`Win+L` 等由系统安全机制直接处理的按键；全屏独占游戏也可能收不到。
+4. 如果目标程序以管理员身份运行，请也让 QuickSwitch 以管理员身份运行，否则发给高权限窗口的按键可能拦不住。
+
+### 配置说明
+
+配置保存在程序目录的 `config.json`（可以在界面「文件 → 打开配置文件」直接编辑，保存后 `Ctrl+R` 重载）。参考 [config.example.json](config.example.json)。
+
+```jsonc
+{
+  "version": 1,
+  "start_with_windows": false,   // 是否开机自启（界面里的勾选框会同步写注册表）
+  "start_minimized": false,      // 启动时是否直接收进托盘
+  "close_to_tray": true,         // 点关闭时是否最小化到托盘
+  "notifications": true,         // 托盘气泡通知
+  "bindings": [
+    {
+      "id": "terminal-1",        // 唯一 ID
+      "name": "终端 1",           // 显示名
+      "hotkey": "Ctrl+Alt+1",    // 组合键
+      "enabled": true,
+      "process": "WindowsTerminal.exe", // 进程名，支持 * 通配，如 *Terminal*.exe
+      "title": "",               // 标题正则（不区分大小写，包含匹配）
+      "window_class": "",        // 窗口类名子串，一般留空
+      "exclude_title": "",       // 排除的标题正则
+      "index": 1,                // 0 = 循环切换；N = 固定切到第 N 个（按窗口创建顺序）
+      "override": true,          // 冲突时用键盘钩子覆盖
+      "when": "activate",        // activate | activateOrLaunch | launch
+      "launch": "",              // 启动命令（shell 语法）
+      "launch_cwd": "",          // 工作目录
+      "wait_seconds": 8          // 启动后等待窗口出现的秒数
+    }
+  ]
+}
+```
+
+`when` 三种模式：
+
+| 值 | 行为 |
+| --- | --- |
+| `activate` | 只切换现有窗口，找不到就只写日志 |
+| `activateOrLaunch` | 先切换；找不到再执行 `launch`，等窗口出现后切过去 |
+| `launch` | 每次按快捷键都启动一个新实例 |
+
+用"批量绑定"生成的绑定是 `process + index` 形式；如果你经常关掉/重开某些窗口，序号可能变化，这时把 `title` 填成窗口标题里的稳定关键字（如项目名）会更可靠。
+
+### 开机自启
+
+界面右上角勾选「开机自启」，会写入 `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`，命令形如：
+
+```
+"C:\Python312\pythonw.exe" "C:\QuickSwitch\QuickSwitch.pyw" --hidden
+```
+
+关闭勾选即移除，不改动系统其它设置。
+
+### 常见问题
+
+**快捷键按了没反应？**
+先看左侧状态列和运行日志：
+- `冲突` → 被占用，换组合键或勾选"冲突时覆盖"；
+- 目标程序是管理员权限 → QuickSwitch 也以管理员身份运行；
+- 目标是全屏独占游戏 → 系统限制，无法拦截。
+
+**窗口序号怎么变了？**
+`index` 是按窗口创建顺序（句柄）排的，重开窗口会变化。改用标题正则，或者用 `index: 0`（循环切换）。
+
+**托盘图标找不到？**
+Windows 默认会折叠托盘图标，点任务栏右下角 `^` 展开，或把图标拖到常驻区域。
+
+**启动失败怎么排查？**
+用 `run-console.cmd` 启动，或看 `logs/quickswitch.log`、界面底部日志。
+
+**会不会有安全风险？**
+程序是本地的 Python 源码，只做窗口切换、快捷键和托盘；键盘钩子只在必要时安装，退出时卸载。没有任何联网行为。
+
+### 已知限制
+
+- 依赖 Python（需要装 pywin32）。要绿色版 exe 可以用 PyInstaller 打包，见下文。
+- 无法覆盖 `Ctrl+Alt+Del`、`Win+L` 等安全按键。
+- 管理员权限窗口与普通权限 QuickSwitch 之间存在 UIPI 限制。
+- 窗口匹配基于标题/进程/类名，Electron 应用标题会随文件变化，建议用项目名做标题正则。
+- 只支持窗口级切换，暂不支持终端/浏览器内部的标签页切换。
+
+### 开发与验证
+
+```
+python -m pytest tests -q            # 纯逻辑单元测试（29 项）
+python -m quickswitch --selftest     # 自检：窗口枚举/热键/钩子/前台切换/启动命令（25 项）
+python tests/gui_capture_qa.py       # 手工 GUI 验收：打开编辑框、录制快捷键、保存、截图
+python tests/e2e_hotkey_qa.py        # 端到端：真实按键 → 系统热键/钩子 → 切到记事本
+```
+
+> `tests/e2e_hotkey_qa.py` 会短暂抢占前台并模拟按键，运行期间不要操作键鼠；前台被其它程序切走时结果可能不稳定。
+
+打包成单文件 exe（可选）：
+
+```
+pip install pyinstaller
+pyinstaller --noconsole --onefile --name QuickSwitch --icon assets/quickswitch.ico ^
+  --add-data "assets;assets" --hidden-import win32timezone QuickSwitch.pyw
+```
+
+（打包后请把 `config.json` 和 `assets` 放在 exe 同目录；程序会优先使用 exe 所在目录。）
+
+### 许可证
+
+[MIT](LICENSE) © 2026 侯义林
