@@ -1729,6 +1729,12 @@ def _top_level_hwnd(widget: tk.Misc) -> int:
 def main(argv: list[str] | None = None) -> int:
     import argparse
 
+    # PyInstaller --windowed / pythonw 下 stdout/stderr 为 None，避免 --selftest / --smoke 崩溃
+    if sys.stdout is None:
+        sys.stdout = open(os.devnull, "w", encoding="utf-8")
+    if sys.stderr is None:
+        sys.stderr = sys.stdout
+
     parser = argparse.ArgumentParser(prog="QuickSwitch", add_help=True)
     parser.add_argument("--hidden", action="store_true", help="启动时隐藏到托盘")
     parser.add_argument("--smoke", action="store_true", help=argparse.SUPPRESS)

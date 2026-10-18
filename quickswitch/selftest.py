@@ -165,6 +165,10 @@ def _notepad_pids() -> set[int]:
 
 
 def run_selftest() -> int:
+    if sys.stdout is None:
+        sys.stdout = open(os.devnull, "w", encoding="utf-8")
+    if sys.stderr is None:
+        sys.stderr = sys.stdout
     try:
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     except Exception:

@@ -16,3 +16,8 @@ tests/*.tmp
 
 # 本地截图（可能包含真实窗口标题，勿提交）
 /docs/
+
+# 打包产物
+/build/
+/dist/
+*.spec

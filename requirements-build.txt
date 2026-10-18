@@ -1,0 +1,4 @@
+-r requirements.txt
+
+# 打包发布版 exe 需要
+pyinstaller>=6.10,<7

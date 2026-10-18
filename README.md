@@ -5,6 +5,7 @@
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-0078D4)](#requirements)
 [![Python](https://img.shields.io/badge/python-3.10%2B-3776AB)](#requirements)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/hyl320/quickswitch?label=release)](https://github.com/hyl320/quickswitch/releases/latest)
 
 A tiny Windows tray utility that binds **global hotkeys to specific windows** — IDEs, terminals, and AI agent windows — so that pressing `Ctrl+Alt+1` jumps straight to VS Code, `Ctrl+Alt+2` to the first terminal, `Ctrl+Alt+3` to the second one, and so on. If the window is not running yet, QuickSwitch can launch it for you and switch to it once it appears.
 
@@ -31,16 +32,30 @@ QuickSwitch is purpose-built for this workflow: pick a window, record a hotkey, 
 - **Tray, autostart, hot reload** — runs in the notification area, optional start on login, JSON config with live reload.
 - **Local-only and dependency-light** — Python + pywin32 + Tkinter; no telemetry, no network requests.
 
-## Requirements
+## Download
 
-- Windows 10 or 11
-- Python 3.10+ with [pywin32](https://pypi.org/project/pywin32/) (`pip install -r requirements.txt`)
-- Pillow is optional, only used for icon generation and screenshots
+**Portable exe — no Python required.** Grab `QuickSwitch.exe` from the [latest release](https://github.com/hyl320/quickswitch/releases/latest).
+
+1. Put the exe in a writable folder, e.g. `D:\Tools\QuickSwitch`. The app creates `config.json` and `logs\` next to it.
+2. Double-click it — no installer and no admin rights. The window opens and an icon appears in the notification area.
+3. Optional: enable **start with Windows** from the toolbar or the tray menu.
+
+> The exe is not code-signed, so Windows SmartScreen may show *"Windows protected your PC"*: click **More info → Run anyway**. Compare the SHA-256 published in the release notes to verify the download.
+
+### Run from source
+
+```
+git clone https://github.com/hyl320/quickswitch.git
+cd quickswitch
+python -m pip install -r requirements.txt
+```
+
+Source mode needs Windows 10/11 + Python 3.10+ with pywin32. Then double-click **`QuickSwitch.vbs`** (silent), or `setup-and-run.cmd` (installs dependencies and starts), or `run-console.cmd` to see errors.
 
 ## Quick start
 
-1. Double-click **`QuickSwitch.vbs`** (starts silently, no console window). Use `run-console.cmd` if you want to see errors.
-2. In the main window: click **Refresh** on the right, select the target window, then click **Bind selected window**.
+1. Launch QuickSwitch (the portable exe, or `QuickSwitch.vbs` from source).
+2. Click **Refresh** on the right, select the target window, then click **Bind selected window**.
 3. In the editor, click **Record**, press the combo you want, and save. The hotkey is active immediately.
 4. Closing the window minimizes it to the tray; double-click the tray icon to bring it back.
 
@@ -96,8 +111,9 @@ The config lives next to the app in `config.json` (edit it from **File → Open 
 ## CLI
 
 ```
-python QuickSwitch.pyw --selftest    # self-check: enumeration, hotkeys, hook, foreground, launch
-python QuickSwitch.pyw --hidden      # start minimized to tray
+QuickSwitch.exe --selftest      # portable exe: enumeration, hotkeys, hook, foreground, launch
+QuickSwitch.exe --hidden        # start minimized to tray
+python QuickSwitch.pyw --selftest   # source mode
 ```
 
 ## Limitations
@@ -106,7 +122,7 @@ python QuickSwitch.pyw --hidden      # start minimized to tray
 - Secure attention keys (`Ctrl+Alt+Del`, `Win+L`) cannot be captured.
 - Elevation boundaries apply (UIPI).
 - Window matching relies on title/process/class; Electron titles change with open files, so use a stable project name in the title regex.
-- A standalone `.exe` can be built with PyInstaller; see the Chinese section for the command.
+- The portable exe is unsigned; see [Releases](https://github.com/hyl320/quickswitch/releases/latest).
 
 ## Development
 
@@ -115,6 +131,7 @@ python -m pytest tests -q            # 29 unit tests
 python -m quickswitch --selftest     # 25 self-check items
 python tests/gui_capture_qa.py       # GUI acceptance: dialogs, recorder, save
 python tests/e2e_hotkey_qa.py        # end-to-end: real keys → hotkey/hook → window switch
+.\build-release.ps1 -Version 1.0.0   # build dist/QuickSwitch.exe + SHA-256
 ```
 
 Project layout:
@@ -123,6 +140,9 @@ Project layout:
 QuickSwitch.pyw          entry point (run with pythonw)
 QuickSwitch.vbs          silent launcher (double-click)
 run-console.cmd          launcher with console output
+setup-and-run.cmd        source mode: pip install + launch
+build-release.ps1        portable exe build (PyInstaller)
+requirements-build.txt   build-time dependencies
 quickswitch/
   app.py                 Tkinter UI, event loop, switching/launching
   hotkeys.py             message pump, RegisterHotKey, LL-hook override, tray
@@ -170,15 +190,30 @@ QuickSwitch 就是把这个需求做成一个开箱即用的小工具：窗口�
 - **托盘运行 / 开机自启 / 配置文件热加载**，界面和日志全中文。
 - 纯 Python + pywin32 + Tkinter，无浏览器内核、无网络请求。
 
-### 环境要求
+### 下载与安装
 
-- Windows 10 / 11
-- Python 3.10+，并安装 pywin32：`pip install -r requirements.txt`
-- Pillow 可选，仅用于生成图标和截图
+**推荐方式：免安装绿色版（不需要 Python）**
+
+1. 打开 [最新 Release](https://github.com/hyl320/quickswitch/releases/latest)，下载 `QuickSwitch.exe`。
+2. 放到一个**可写目录**，例如 `D:\Tools\QuickSwitch`；程序会在 exe 同目录创建 `config.json` 和 `logs\`。
+3. 双击运行即可，无需安装、无需管理员权限。窗口打开，托盘出现图标。
+4. 需要开机自启就在界面右上角勾选「开机自启」。
+
+> 该 exe 未做代码签名，Windows SmartScreen 可能提示"已保护你的电脑"：点「更多信息 → 仍要运行」，或用 Release 说明里的 SHA-256 校验完整性。
+
+**从源码运行（需要 Python 3.10+）**
+
+```
+git clone https://github.com/hyl320/quickswitch.git
+cd quickswitch
+python -m pip install -r requirements.txt
+```
+
+然后双击 `QuickSwitch.vbs`（静默启动）或 `setup-and-run.cmd`（自动装依赖并启动）；要看报错就用 `run-console.cmd`。
 
 ### 快速开始
 
-1. 双击 **`QuickSwitch.vbs`**（静默启动，不弹控制台；也可以双击 `run-console.cmd` 看报错）。
+1. 启动程序（绿色版双击 `QuickSwitch.exe`；源码版双击 `QuickSwitch.vbs`）。
 2. 首次启动窗口里有三步提示：点右侧「刷新」→ 在「当前窗口」里选中目标窗口 → 点「绑定所选窗口」。
 3. 在编辑框里点「录制」，按下想用的组合键，保存。**立即生效**。
 4. 关闭窗口默认最小化到托盘，双击托盘图标可以再打开；托盘右键菜单里可以退出。
@@ -251,7 +286,8 @@ QuickSwitch 就是把这个需求做成一个开箱即用的小工具：窗口�
 界面右上角勾选「开机自启」，会写入 `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`，命令形如：
 
 ```
-"C:\Python312\pythonw.exe" "C:\QuickSwitch\QuickSwitch.pyw" --hidden
+C:\Tools\QuickSwitch\QuickSwitch.exe --hidden          # 绿色版
+"C:\Python312\pythonw.exe" "C:\QuickSwitch\QuickSwitch.pyw" --hidden   # 源码版
 ```
 
 关闭勾选即移除，不改动系统其它设置。
@@ -278,7 +314,7 @@ Windows 默认会折叠托盘图标，点任务栏右下角 `^` 展开，或把�
 
 ### 已知限制
 
-- 依赖 Python（需要装 pywin32）。要绿色版 exe 可以用 PyInstaller 打包，见下文。
+- 绿色版 exe 已内置 Python 运行时；源码版需要 Python 3.10+ 和 pywin32。
 - 无法覆盖 `Ctrl+Alt+Del`、`Win+L` 等安全按键。
 - 管理员权限窗口与普通权限 QuickSwitch 之间存在 UIPI 限制。
 - 窗口匹配基于标题/进程/类名，Electron 应用标题会随文件变化，建议用项目名做标题正则。
@@ -295,15 +331,14 @@ python tests/e2e_hotkey_qa.py        # 端到端：真实按键 → 系统热键
 
 > `tests/e2e_hotkey_qa.py` 会短暂抢占前台并模拟按键，运行期间不要操作键鼠；前台被其它程序切走时结果可能不稳定。
 
-打包成单文件 exe（可选）：
+打包发布版 exe：
 
 ```
-pip install pyinstaller
-pyinstaller --noconsole --onefile --name QuickSwitch --icon assets/quickswitch.ico ^
-  --add-data "assets;assets" --hidden-import win32timezone QuickSwitch.pyw
+python -m pip install -r requirements-build.txt
+.\build-release.ps1 -Version 1.0.0
 ```
 
-（打包后请把 `config.json` 和 `assets` 放在 exe 同目录；程序会优先使用 exe 所在目录。）
+输出 `dist\QuickSwitch.exe` 和 `dist\QuickSwitch.exe.sha256`；把 exe 上传到 GitHub Release 即可。绿色版把配置和日志放在 exe 同目录。
 
 ### 许可证
 
