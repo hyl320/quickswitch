@@ -73,9 +73,15 @@ class Binding:
 
     # 找不到窗口时的行为
     when: str = WHEN_ACTIVATE_OR_LAUNCH
-    launch: str = ""
+    launch: str = ""          # 启动命令，可多行（每行一条，按顺序执行）
     launch_cwd: str = ""
+    launch_gap: float = 0.8   # 多条命令之间的间隔秒数
     wait_seconds: float = 8.0
+
+    def launch_commands(self) -> list[str]:
+        """把 launch 按行拆成命令列表（忽略空行）。"""
+        text = self.launch.replace("\r\n", "\n").replace("\r", "\n")
+        return [line.strip() for line in text.split("\n") if line.strip()]
 
     def display_name(self) -> str:
         if self.name.strip():
@@ -101,6 +107,7 @@ class Binding:
             "when": self.when,
             "launch": self.launch,
             "launch_cwd": self.launch_cwd,
+            "launch_gap": self.launch_gap,
             "wait_seconds": self.wait_seconds,
         }
 
@@ -124,6 +131,10 @@ class Binding:
             wait = float(data.get("wait_seconds", 8.0) or 0)
         except (TypeError, ValueError):
             wait = 8.0
+        try:
+            gap = float(data.get("launch_gap", 0.8) if data.get("launch_gap") is not None else 0.8)
+        except (TypeError, ValueError):
+            gap = 0.8
 
         when = _str("when", WHEN_ACTIVATE_OR_LAUNCH)
         if when not in WHEN_LABELS:
@@ -143,6 +154,7 @@ class Binding:
             when=when,
             launch=_str("launch"),
             launch_cwd=_str("launch_cwd"),
+            launch_gap=max(0.0, min(30.0, gap)),
             wait_seconds=max(0.0, min(120.0, wait)),
         )
 
@@ -289,6 +301,6 @@ def validate_bindings(bindings: list[Binding]) -> list[tuple[str, str]]:
             if not (binding.process or binding.title or binding.window_class):
                 problems.append((binding.id, "切换窗口需要至少填写进程、标题或窗口类之一"))
         if binding.when in (WHEN_ACTIVATE_OR_LAUNCH, WHEN_LAUNCH):
-            if not binding.launch.strip():
+            if not binding.launch_commands():
                 problems.append((binding.id, "未填写启动命令"))
     return problems

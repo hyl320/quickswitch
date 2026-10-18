@@ -231,3 +231,72 @@ def test_config_json_is_valid_example():
         data = json.load(fh)
     assert data["bindings"]
     config_mod.Config.from_dict(data)
+
+# ---------------------------------------------------------------------------
+# 场景启动（多命令）
+# ---------------------------------------------------------------------------
+
+def test_launch_commands_split_lines():
+    binding = _make_binding(
+        when=config_mod.WHEN_ACTIVATE_OR_LAUNCH,
+        launch="code D:\\proj\n\n  wt.exe -w 0 nt  \r\nstart https://example.com",
+    )
+    assert binding.launch_commands() == [
+        "code D:\\proj",
+        "wt.exe -w 0 nt",
+        "start https://example.com",
+    ]
+
+
+def test_launch_commands_empty():
+    binding = _make_binding(launch="   \n\n  ")
+    assert binding.launch_commands() == []
+
+
+def test_launch_gap_roundtrip_and_clamp():
+    binding = config_mod.Binding.from_dict(
+        {"id": "g", "hotkey": "Ctrl+1", "launch": "notepad", "launch_gap": 2.5}
+    )
+    assert binding.launch_gap == 2.5
+    assert binding.to_dict()["launch_gap"] == 2.5
+
+    clamped = config_mod.Binding.from_dict({"id": "g2", "launch_gap": 999})
+    assert clamped.launch_gap == 30.0
+    defaulted = config_mod.Binding.from_dict({"id": "g3"})
+    assert defaulted.launch_gap == 0.8
+
+
+def test_validate_bindings_multiline_launch():
+    binding = _make_binding(
+        id="scene",
+        hotkey="Ctrl+Alt+3",
+        process="Code.exe",
+        title="project-a",
+        when=config_mod.WHEN_ACTIVATE_OR_LAUNCH,
+        launch="code .\nwt.exe -w 0 nt",
+        launch_gap=1.0,
+    )
+    assert config_mod.validate_bindings([binding]) == []
+
+
+def test_config_roundtrip_multiline_launch():
+    with tempfile.TemporaryDirectory() as temp_dir:
+        path = os.path.join(temp_dir, "config.json")
+        cfg = config_mod.Config(
+            bindings=[
+                _make_binding(
+                    id="scene",
+                    hotkey="Ctrl+Alt+3",
+                    process="Code.exe",
+                    when=config_mod.WHEN_ACTIVATE_OR_LAUNCH,
+                    launch="code .\nnotepad.exe",
+                    launch_gap=1.5,
+                )
+            ]
+        )
+        config_mod.save(cfg, path)
+        loaded = config_mod.load(path)
+    binding = loaded.bindings[0]
+    assert binding.launch_commands() == ["code .", "notepad.exe"]
+    assert binding.launch_gap == 1.5
+

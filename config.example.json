@@ -19,7 +19,8 @@
       "when": "activate",
       "launch": "",
       "launch_cwd": "",
-      "wait_seconds": 8
+      "wait_seconds": 8,
+      "launch_gap": 0.8
     },
     {
       "id": "ex02",
@@ -35,7 +36,25 @@
       "when": "activateOrLaunch",
       "launch": "code D:\\proj",
       "launch_cwd": "D:\\proj",
-      "wait_seconds": 12
+      "wait_seconds": 12,
+      "launch_gap": 0.8
+    },
+    {
+      "id": "ex03",
+      "name": "示例：开发场景（IDE + 终端 + 浏览器）",
+      "hotkey": "Ctrl+Alt+3",
+      "enabled": false,
+      "process": "Code.exe",
+      "title": "my-project",
+      "window_class": "",
+      "exclude_title": "",
+      "index": 0,
+      "override": true,
+      "when": "activateOrLaunch",
+      "launch": "wt.exe -w 0 nt pwsh -NoExit -Command \"cd D:\\proj\"\ncode D:\\proj\nstart https://github.com",
+      "launch_cwd": "",
+      "launch_gap": 1.0,
+      "wait_seconds": 20
     }
   ]
 }

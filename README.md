@@ -63,6 +63,28 @@ Source mode needs Windows 10/11 + Python 3.10+ with pywin32. Then double-click *
 
 > Screenshots are intentionally **not** committed to this repository: they would expose real window titles, which may contain personal or project information.
 
+## Workspace launch (one hotkey → whole dev setup)
+
+A binding can launch several commands in order and then jump to its main window. With `activateOrLaunch`, the first press builds the scene, and later presses just switch back to it — nothing is relaunched while the window exists.
+
+```jsonc
+{
+  "name": "Project A",
+  "hotkey": "Ctrl+Alt+3",
+  "process": "Code.exe",
+  "title": "project-a",
+  "when": "activateOrLaunch",
+  "launch": "wt.exe -w 0 nt pwsh -NoExit -Command \"cd D:\\proj\"\ncode D:\\proj\nstart https://github.com",
+  "launch_gap": 1.0,
+  "wait_seconds": 20
+}
+```
+
+- one command per line, executed top to bottom (shell syntax; `start <url>` opens the default browser);
+- `launch_gap` — seconds between commands, so terminals/windows have time to open;
+- `wait_seconds` — how long to wait for the matching window before focusing it;
+- close the scene's main window and press the hotkey again to rebuild it.
+
 ## How conflict overriding works
 
 1. QuickSwitch first registers each combo with `RegisterHotKey`. On success the system delivers the key to QuickSwitch and no other app sees it.
@@ -96,6 +118,7 @@ The config lives next to the app in `config.json` (edit it from **File → Open 
       "when": "activate",  // activate | activateOrLaunch | launch
       "launch": "",
       "launch_cwd": "",
+      "launch_gap": 0.8,
       "wait_seconds": 8
     }
   ]
@@ -123,6 +146,7 @@ python QuickSwitch.pyw --selftest   # source mode
 - Elevation boundaries apply (UIPI).
 - Window matching relies on title/process/class; Electron titles change with open files, so use a stable project name in the title regex.
 - The portable exe is unsigned; see [Releases](https://github.com/hyl320/quickswitch/releases/latest).
+- Workspace launch focuses the scene's main window; it does not restore window positions or multi-monitor layouts.
 
 ## Development
 
@@ -131,7 +155,7 @@ python -m pytest tests -q            # 29 unit tests
 python -m quickswitch --selftest     # 25 self-check items
 python tests/gui_capture_qa.py       # GUI acceptance: dialogs, recorder, save
 python tests/e2e_hotkey_qa.py        # end-to-end: real keys → hotkey/hook → window switch
-.\build-release.ps1 -Version 1.0.1   # build dist/QuickSwitch.exe + SHA-256
+.\build-release.ps1 -Version 1.1.0   # build dist/QuickSwitch.exe + SHA-256
 ```
 
 Project layout:
@@ -221,6 +245,28 @@ python -m pip install -r requirements.txt
 > 快捷键建议优先选 `Ctrl+Alt+数字`：`Ctrl+数字` 全局生效后会抢掉浏览器切换标签页、IDE 里同类快捷键。
 
 > 仓库里不提交截图：截图会带出真实窗口标题，可能包含个人信息或项目信息。截图会在本地生成，已被 `.gitignore` 忽略。
+
+### 场景启动（一个快捷键拉起整套环境）
+
+一条绑定可以按顺序执行多条命令，然后切到它的主窗口。配合 `activateOrLaunch`：第一次按拉起 IDE + 终端 + 浏览器，之后按只切回主窗口，不会重复启动。
+
+```jsonc
+{
+  "name": "项目 A",
+  "hotkey": "Ctrl+Alt+3",
+  "process": "Code.exe",
+  "title": "project-a",
+  "when": "activateOrLaunch",
+  "launch": "wt.exe -w 0 nt pwsh -NoExit -Command \"cd D:\\proj\"\ncode D:\\proj\nstart https://github.com",
+  "launch_gap": 1.0,
+  "wait_seconds": 20
+}
+```
+
+- 每行一条命令，从上到下执行（shell 语法；`start <网址>` 会用默认浏览器打开）；
+- `launch_gap`：命令之间的等待秒数，避免终端/窗口还没起来；
+- `wait_seconds`：启动后等待目标窗口出现的最长时间；
+- 关掉场景主窗口后再按快捷键，就会重新拉起整套环境。
 
 ### 界面说明
 
@@ -319,6 +365,7 @@ Windows 默认会折叠托盘图标，点任务栏右下角 `^` 展开，或把�
 - 管理员权限窗口与普通权限 QuickSwitch 之间存在 UIPI 限制。
 - 窗口匹配基于标题/进程/类名，Electron 应用标题会随文件变化，建议用项目名做标题正则。
 - 只支持窗口级切换，暂不支持终端/浏览器内部的标签页切换。
+- 场景启动只负责拉起命令并切回主窗口，不会恢复窗口位置/多屏布局。
 
 ### 开发与验证
 
@@ -335,7 +382,7 @@ python tests/e2e_hotkey_qa.py        # 端到端：真实按键 → 系统热键
 
 ```
 python -m pip install -r requirements-build.txt
-.\build-release.ps1 -Version 1.0.1
+.\build-release.ps1 -Version 1.1.0
 ```
 
 输出 `dist\QuickSwitch.exe` 和 `dist\QuickSwitch.exe.sha256`；把 exe 上传到 GitHub Release 即可。绿色版把配置和日志放在 exe 同目录。

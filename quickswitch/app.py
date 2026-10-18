@@ -31,7 +31,7 @@ from . import winapi
 from .config import Binding, Config, WHEN_ACTIVATE, WHEN_ACTIVATE_OR_LAUNCH, WHEN_LAUNCH
 
 APP_TITLE = "QuickSwitch · 窗口速切"
-APP_VERSION = "1.0.1"
+APP_VERSION = "1.1.0"
 ICON_FILENAME = "quickswitch.ico"
 
 STATE_TAGS = {
@@ -185,8 +185,8 @@ class BindingDialog(ModalDialog):
         self.var_index = tk.IntVar(value=source.index if source.index > 0 else 1)
         self.var_override = tk.BooleanVar(value=source.override)
         self.var_when = tk.StringVar(value=source.when)
-        self.var_launch = tk.StringVar(value=source.launch)
         self.var_cwd = tk.StringVar(value=source.launch_cwd)
+        self.var_launch_gap = tk.StringVar(value=f"{source.launch_gap:g}")
         self.var_wait = tk.StringVar(value=f"{source.wait_seconds:g}")
         self.var_record_hint = tk.StringVar(value="点击右侧「录制」后按下组合键")
         self.var_test = tk.StringVar(value="")
@@ -283,13 +283,33 @@ class BindingDialog(ModalDialog):
                 when_row, text=config_mod.WHEN_LABELS[when], variable=self.var_when, value=when
             ).pack(side="left", padx=(0, 12))
 
-        ttk.Label(launch, text="启动命令").grid(row=1, column=0, sticky="w", pady=3)
-        ttk.Entry(launch, textvariable=self.var_launch).grid(
-            row=1, column=1, sticky="we", padx=(8, 8), pady=3
+        ttk.Label(launch, text="启动命令").grid(row=1, column=0, sticky="nw", pady=3)
+        command_box = ttk.Frame(launch)
+        command_box.grid(row=1, column=1, sticky="nsew", padx=(8, 8), pady=3)
+        command_box.columnconfigure(0, weight=1)
+        command_box.rowconfigure(0, weight=1)
+        self.launch_text = tk.Text(
+            command_box,
+            height=4,
+            width=46,
+            wrap="none",
+            relief="solid",
+            borderwidth=1,
+            font=("Microsoft YaHei UI", 9),
         )
-        ttk.Label(launch, text="如 wt.exe / code D:\\proj").grid(
-            row=1, column=2, sticky="w", pady=3
+        self.launch_text.grid(row=0, column=0, sticky="nsew")
+        launch_scroll = ttk.Scrollbar(
+            command_box, orient="vertical", command=self.launch_text.yview
         )
+        launch_scroll.grid(row=0, column=1, sticky="ns")
+        self.launch_text.configure(yscrollcommand=launch_scroll.set)
+        self.launch_text.insert("1.0", source.launch)
+        ttk.Label(
+            launch,
+            text="每行一条，按顺序执行\n例如：wt.exe -w 0 nt ...\ncode D:\\proj",
+            foreground="#6b7280",
+            justify="left",
+        ).grid(row=1, column=2, sticky="nw", pady=3)
 
         ttk.Label(launch, text="工作目录").grid(row=2, column=0, sticky="w", pady=3)
         cwd_row = ttk.Frame(launch)
@@ -304,6 +324,15 @@ class BindingDialog(ModalDialog):
         wait_row.grid(row=3, column=1, sticky="w", padx=(8, 8), pady=3)
         ttk.Spinbox(wait_row, from_=1, to=120, width=5, textvariable=self.var_wait).pack(side="left")
         ttk.Label(wait_row, text="秒（启动后自动切换过去）").pack(side="left", padx=(6, 0))
+        ttk.Label(launch, text="命令间隔").grid(row=4, column=0, sticky="w", pady=3)
+        gap_row = ttk.Frame(launch)
+        gap_row.grid(row=4, column=1, sticky="w", padx=(8, 8), pady=3)
+        ttk.Spinbox(
+            gap_row, from_=0, to=30, increment=0.5, width=5, textvariable=self.var_launch_gap
+        ).pack(side="left")
+        ttk.Label(gap_row, text="秒（多条命令之间的等待，默认 0.8）").pack(
+            side="left", padx=(6, 0)
+        )
 
         bottom = ttk.Frame(outer)
         bottom.pack(fill="x", pady=(12, 0))
@@ -401,8 +430,9 @@ class BindingDialog(ModalDialog):
             index=int(self.var_index.get() or 0) if self.var_index_mode.get() == "fixed" else 0,
             override=bool(self.var_override.get()),
             when=self.var_when.get(),
-            launch=self.var_launch.get().strip(),
+            launch="\n".join(self._launch_lines()),
             launch_cwd=self.var_cwd.get().strip(),
+            launch_gap=_parse_float(self.var_launch_gap.get(), 0.8),
             wait_seconds=_parse_float(self.var_wait.get(), 8.0),
         )
         if self.var_index_mode.get() == "fixed" and binding.index < 1:
@@ -411,9 +441,14 @@ class BindingDialog(ModalDialog):
         if check_match and binding.when in (WHEN_ACTIVATE, WHEN_ACTIVATE_OR_LAUNCH):
             if not (binding.process or binding.title or binding.window_class):
                 raise ValueError("切换窗口需要至少填写进程、标题或窗口类之一")
-        if binding.when in (WHEN_ACTIVATE_OR_LAUNCH, WHEN_LAUNCH) and not binding.launch:
-            raise ValueError("所选模式需要填写启动命令")
+        if binding.when in (WHEN_ACTIVATE_OR_LAUNCH, WHEN_LAUNCH) and not binding.launch_commands():
+            raise ValueError("所选模式需要至少一条启动命令（每行一条）")
         return binding
+
+    def _launch_lines(self) -> list[str]:
+        text = self.launch_text.get("1.0", "end")
+        text = text.replace("\r\n", "\n").replace("\r", "\n")
+        return [line.strip() for line in text.split("\n") if line.strip()]
 
     def _test(self) -> None:
         try:
@@ -425,7 +460,7 @@ class BindingDialog(ModalDialog):
         windows = [w for w in winapi.list_windows() if w.pid != os.getpid()]
         matches = matcher_mod.find_matches(rule, windows)
         if not matches:
-            hint = "（会执行启动命令）" if binding.launch else ""
+            hint = "（会执行启动命令）" if binding.launch_commands() else ""
             self.var_test.set(f"✗ 当前没有匹配窗口{hint}")
             return
         target = matcher_mod.choose_target(rule, matches, winapi.foreground_window())
@@ -1149,8 +1184,10 @@ class MainWindow:
         ]
         if status is not None:
             lines.append(f"状态：{status.label}" + (f"（{status.detail}）" if status.detail else ""))
-        if binding.launch:
-            lines.append(f"启动：{binding.launch}")
+        commands = binding.launch_commands()
+        if commands:
+            preview = "；".join(commands[:3]) + ("…" if len(commands) > 3 else "")
+            lines.append(f"启动（{len(commands)} 条）：{preview}")
         return "\n".join(lines)
 
     def _window_tooltip(self, item: str) -> str:
@@ -1431,17 +1468,25 @@ class MainWindow:
                         self.log(f"未找到匹配窗口：{binding.display_name()}", "warn")
                     return
 
-            if not binding.launch.strip():
+            commands = binding.launch_commands()
+            if not commands:
                 self.log(f"「{binding.display_name()}」没有配置启动命令", "warn")
                 return
 
-            self.log(f"启动：{binding.launch}")
-            try:
-                winapi.launch_command(binding.launch, binding.launch_cwd)
-            except Exception as exc:
-                self.log(f"启动失败：{exc}", "error")
+            launched = 0
+            for index, command in enumerate(commands, start=1):
+                prefix = f"[{index}/{len(commands)}] " if len(commands) > 1 else ""
+                self.log(f"启动{prefix}：{command}")
+                try:
+                    winapi.launch_command(command, binding.launch_cwd)
+                    launched += 1
+                except Exception as exc:
+                    self.log(f"启动失败：{command}（{exc}）", "error")
+                if index < len(commands) and binding.launch_gap > 0:
+                    time.sleep(binding.launch_gap)
+            if launched == 0:
+                self.log("所有启动命令都失败了", "error")
                 return
-
             if binding.when == WHEN_LAUNCH:
                 return
             if rule is None:
