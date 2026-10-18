@@ -131,7 +131,7 @@ python -m pytest tests -q            # 29 unit tests
 python -m quickswitch --selftest     # 25 self-check items
 python tests/gui_capture_qa.py       # GUI acceptance: dialogs, recorder, save
 python tests/e2e_hotkey_qa.py        # end-to-end: real keys → hotkey/hook → window switch
-.\build-release.ps1 -Version 1.0.0   # build dist/QuickSwitch.exe + SHA-256
+.\build-release.ps1 -Version 1.0.1   # build dist/QuickSwitch.exe + SHA-256
 ```
 
 Project layout:
@@ -335,7 +335,7 @@ python tests/e2e_hotkey_qa.py        # 端到端：真实按键 → 系统热键
 
 ```
 python -m pip install -r requirements-build.txt
-.\build-release.ps1 -Version 1.0.0
+.\build-release.ps1 -Version 1.0.1
 ```
 
 输出 `dist\QuickSwitch.exe` 和 `dist\QuickSwitch.exe.sha256`；把 exe 上传到 GitHub Release 即可。绿色版把配置和日志放在 exe 同目录。

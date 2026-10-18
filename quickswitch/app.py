@@ -31,7 +31,7 @@ from . import winapi
 from .config import Binding, Config, WHEN_ACTIVATE, WHEN_ACTIVATE_OR_LAUNCH, WHEN_LAUNCH
 
 APP_TITLE = "QuickSwitch · 窗口速切"
-APP_VERSION = "1.0.0"
+APP_VERSION = "1.0.1"
 ICON_FILENAME = "quickswitch.ico"
 
 STATE_TAGS = {
