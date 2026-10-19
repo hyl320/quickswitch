@@ -2,14 +2,14 @@
 #
 # Usage:
 #   python -m pip install -r requirements-build.txt
-#   .\build-release.ps1 -Version 1.2.0
+#   .\build-release.ps1 -Version 1.2.1
 #
 # Output:
 #   dist/QuickSwitch.exe
 #   dist/QuickSwitch.exe.sha256
 #Requires -Version 5.1
 param(
-    [string]$Version = "1.2.0",
+    [string]$Version = "1.2.1",
     [switch]$SkipTests
 )
 

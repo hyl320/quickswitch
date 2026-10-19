@@ -31,7 +31,7 @@ from . import winapi
 from .config import Binding, Config, WHEN_ACTIVATE, WHEN_ACTIVATE_OR_LAUNCH, WHEN_LAUNCH
 
 APP_TITLE = "QuickSwitch · 窗口速切"
-APP_VERSION = "1.2.0"
+APP_VERSION = "1.2.1"
 
 # Dense Pro 视觉主题（经典桌面工具风：浅灰、方角、紧凑、深蓝选中）
 THEME = {
@@ -756,8 +756,14 @@ class MainWindow:
         root.geometry("1200x780")
         root.minsize(1000, 620)
         root.configure(bg=THEME["bg"])
+        icon_file = icon_path()
         try:
-            root.iconbitmap(default=icon_path())
+            root.iconbitmap(default=icon_file)
+        except Exception:
+            pass
+        try:
+            # 显式给当前窗口设置图标，任务栏才会显示这个 ico（default= 只影响默认图标）
+            root.iconbitmap(icon_file)
         except Exception:
             pass
 
@@ -897,6 +903,7 @@ class MainWindow:
             variable=self.var_notify,
             command=lambda: self._toggle_option("notifications", self.var_notify),
         )
+        tools.add_command(label="创建桌面快捷方式", command=self._create_shortcut)
         tools.add_separator()
         tools.add_command(label="打开日志文件", command=self._open_log_file)
         menubar.add_cascade(label="工具", menu=tools)
@@ -1689,6 +1696,60 @@ class MainWindow:
             winapi.open_path(path)
         except Exception as exc:
             messagebox.showerror(APP_TITLE, f"无法打开配置文件：\n{exc}", parent=self.root)
+
+    def _create_shortcut(self, target_path: str = "") -> str:
+        """在桌面创建带正确图标的 QuickSwitch 快捷方式。"""
+        try:
+            import win32com.client
+            from win32com.shell import shell as shell_mod
+            from win32com.shell import shellcon
+        except Exception as exc:
+            messagebox.showerror(APP_TITLE, f"创建快捷方式失败：{exc}", parent=self.root)
+            return ""
+
+        desktop = ""
+        try:
+            desktop = shell_mod.SHGetFolderPath(0, shellcon.CSIDL_DESKTOPDIRECTORY, None, 0)
+        except Exception:
+            desktop = os.path.join(os.path.expanduser("~"), "Desktop")
+        link_path = target_path or os.path.join(desktop, "QuickSwitch.lnk")
+
+        frozen = getattr(sys, "frozen", False)
+        if frozen:
+            target = sys.executable
+            arguments = ""
+            icon_location = sys.executable + ",0"
+        else:
+            executable = sys.executable
+            if os.path.basename(executable).lower() == "python.exe":
+                pythonw = os.path.join(os.path.dirname(executable), "pythonw.exe")
+                if os.path.exists(pythonw):
+                    executable = pythonw
+            target = executable
+            arguments = f'"{os.path.join(config_mod.app_dir(), "QuickSwitch.pyw")}"'
+            icon_location = icon_path() + ",0"
+
+        try:
+            shell = win32com.client.Dispatch("WScript.Shell")
+            shortcut = shell.CreateShortCut(link_path)
+            shortcut.TargetPath = target
+            shortcut.Arguments = arguments
+            shortcut.WorkingDirectory = config_mod.app_dir()
+            shortcut.IconLocation = icon_location
+            shortcut.Description = "QuickSwitch - Windows 窗口/Agent 速切"
+            shortcut.Save()
+        except Exception as exc:
+            messagebox.showerror(APP_TITLE, f"创建快捷方式失败：{exc}", parent=self.root)
+            return ""
+
+        self.log(f"已创建桌面快捷方式：{link_path}")
+        messagebox.showinfo(
+            APP_TITLE,
+            f"已创建快捷方式：\n{link_path}\n\n"
+            "可以右键这个快捷方式 →「固定到任务栏」，图标就是新的 QuickSwitch 图标。",
+            parent=self.root,
+        )
+        return link_path
 
     def _open_log_file(self) -> None:
         path = os.path.join(config_mod.app_dir(), "logs", "quickswitch.log")
