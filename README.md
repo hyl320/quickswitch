@@ -411,3 +411,9 @@ python -m pip install -r requirements-build.txt
 ### 许可证
 
 [MIT](LICENSE) © 2026 侯义林
+
+---
+
+如果 QuickSwitch 帮你省了时间，点个 ⭐ 能让更多人发现它。
+
+If it saves you time, a star helps other people find it.
