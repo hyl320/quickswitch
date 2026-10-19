@@ -21,3 +21,6 @@ tests/*.tmp
 /build/
 /dist/
 *.spec
+
+# 测试配置备份
+tests/*.bak

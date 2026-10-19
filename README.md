@@ -9,17 +9,17 @@
 
 A tiny Windows tray utility that binds **global hotkeys to specific windows** — IDEs, terminals, and AI agent windows — so that pressing `Ctrl+Alt+1` jumps straight to VS Code, `Ctrl+Alt+2` to the first terminal, `Ctrl+Alt+3` to the second one, and so on. If the window is not running yet, QuickSwitch can launch it for you and switch to it once it appears.
 
-## Why another window switcher?
+## Why QuickSwitch
 
-When you have a dozen windows open, switching means clicking the taskbar or cycling through `Alt+Tab`. The built-in `Win+1..9` only activates *taskbar-pinned apps* and cannot tell multiple windows of the same app apart; Windows Terminal's `Ctrl+1..9` only works inside one terminal window.
+Switching windows should be muscle memory. QuickSwitch gives every project window, terminal, and AI-agent window its own global hotkey, so you never hunt through the taskbar or cycle blindly with `Alt+Tab` again.
 
-Existing tools are close but not quite there:
+What makes it worth using:
 
-- [AutoHotkey](https://www.autohotkey.com/) is extremely flexible, but every scenario needs its own script;
-- [HotKeyP](https://freesoft-100.com/review/hotkeyp.html) and similar generic hotkey managers can bind window actions, but the UX is dated and there is no "match windows, cycle, launch when missing" workflow;
-- [fwin](https://github.com/doitian/fwin) is a search-then-switch picker, not a one-key shortcut.
-
-QuickSwitch is purpose-built for this workflow: pick a window, record a hotkey, done. And when a hotkey collides with a system or third-party shortcut, it can take it over with a low-level keyboard hook.
+- **One key per window, not per app** — match by process, title, and window class to pin the exact instance; use round-robin or a fixed index when the same app has many windows.
+- **It can win shortcut conflicts** — when a combo is already taken by Windows or another app, QuickSwitch takes it over with a low-level keyboard hook instead of asking you to pick another key.
+- **One key builds a whole workspace** — launch your IDE, terminals and browser in order, wait for the main window, then focus it; press again later and it simply switches back.
+- **No scripting, no installer** — a single portable exe with tray icon, autostart option, JSON config and a hotkey recorder. No Python, no admin rights, no network access.
+- **Made for developers and agent workflows** — fixed shortcuts for many similar windows fit muscle memory.
 
 ## Features
 
@@ -192,17 +192,17 @@ tests/                   unit tests, GUI/E2E QA scripts, fixtures
 
 把每一个 IDE / Agent / 终端窗口绑到一个顺手的全局快捷键上：按 **Ctrl+Alt+1** 切到 VS Code，按 **Ctrl+Alt+2** 切到第一个终端，按 **Ctrl+Alt+3** 切到第二个终端……窗口没开时还能自动启动它。
 
-### 为什么做这个
+### 为什么是 QuickSwitch
 
-任务栏上的窗口一多，切换就要靠鼠标点，或者反复 `Alt+Tab` 找。系统自带的 `Win+1..9` 只能激活任务栏上固定的应用，同一个应用开多个窗口时没法区分；Windows Terminal 的 `Ctrl+1..9` 又只在终端内部有效。
+切换窗口不该是"找窗口"。QuickSwitch 给每个项目窗口、终端窗口、AI Agent 窗口一个独立的全局快捷键，按一下就到，不用再在任务栏里点，也不用反复 `Alt+Tab` 翻。
 
-现成方案也不是没有：
+它值得用的地方：
 
-- [AutoHotkey](https://www.autohotkey.com/) 最灵活，但每个场景都要自己写脚本；
-- [HotKeyP](https://freesoft-100.com/review/hotkeyp.html) 这类通用热键工具可以绑定窗口操作，但配置界面偏老，且没有"窗口匹配 + 循环切换 + 找不到就启动"这套组合；
-- [fwin](https://github.com/doitian/fwin) 之类的窗口选择器是"先弹窗搜索再切换"，不是一键直达。
-
-QuickSwitch 就是把这个需求做成一个开箱即用的小工具：窗口列表里勾一下 → 录制快捷键 → 完成。冲突的系统快捷键可以选择用键盘钩子覆盖。
+- **一个窗口一个键，而不是一个应用一个键**：按进程、标题、窗口类精确匹配到某个窗口实例；同一个应用开多个窗口时，用循环切换或固定序号区分。
+- **能抢回被占用的快捷键**：组合键被系统或其它软件占用时，用低级键盘钩子接管，而不是让你换一个不顺手的位置。
+- **一个键拉起整套环境**：IDE、终端、浏览器按顺序启动，等主窗口出现后自动切过去；之后再按只切回场景，不会重复启动。
+- **不用写脚本，也不用安装**：单文件绿色版，托盘运行，支持开机自启、配置文件热加载和快捷键录制；不依赖 Python、不需要管理员权限、不联网。
+- **为开发者和多 Agent 工作流设计**：面对一堆长得差不多的窗口，固定键位最符合肌肉记忆。
 
 ### 特性
 
