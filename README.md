@@ -29,6 +29,7 @@ QuickSwitch is purpose-built for this workflow: pick a window, record a hotkey, 
 - **Conflict override** — if `RegisterHotKey` reports the combo is taken, QuickSwitch falls back to `WH_KEYBOARD_LL` and swallows the key before the system sees it (status shows "hook").
 - **Batch binding** — select multiple windows and generate `Ctrl+1, Ctrl+2, Ctrl+3...` bindings automatically.
 - **Hotkey recorder** — click "Record" and press the combo; no string syntax to remember.
+- **Dense Pro UI** — compact classic-desktop layout: tight rows, monospace hotkeys, sunken status bar and native Windows controls.
 - **Tray, autostart, hot reload** — runs in the notification area, optional start on login, JSON config with live reload.
 - **Local-only and dependency-light** — Python + pywin32 + Tkinter; no telemetry, no network requests.
 
@@ -155,7 +156,7 @@ python -m pytest tests -q            # 29 unit tests
 python -m quickswitch --selftest     # 25 self-check items
 python tests/gui_capture_qa.py       # GUI acceptance: dialogs, recorder, save
 python tests/e2e_hotkey_qa.py        # end-to-end: real keys → hotkey/hook → window switch
-.\build-release.ps1 -Version 1.1.0   # build dist/QuickSwitch.exe + SHA-256
+.\build-release.ps1 -Version 1.2.0   # build dist/QuickSwitch.exe + SHA-256
 ```
 
 Project layout:
@@ -211,6 +212,7 @@ QuickSwitch 就是把这个需求做成一个开箱即用的小工具：窗口�
 - **冲突覆盖**：组合键被系统或其它软件占用时，自动切换到低级键盘钩子，在按键进入系统前拦下它（状态列显示"钩子接管"）。
 - **批量绑定**：一次选中多个窗口，自动生成 `Ctrl+1、Ctrl+2、Ctrl+3…`（或按 F 键递增）的绑定。
 - **快捷键录制**：点"录制"按下组合键即可，不用手写字符串。
+- **Dense Pro 界面**：紧凑行高、等宽快捷键列、分段状态栏，经典 Windows 桌面工具观感。
 - **托盘运行 / 开机自启 / 配置文件热加载**，界面和日志全中文。
 - 纯 Python + pywin32 + Tkinter，无浏览器内核、无网络请求。
 
@@ -382,7 +384,7 @@ python tests/e2e_hotkey_qa.py        # 端到端：真实按键 → 系统热键
 
 ```
 python -m pip install -r requirements-build.txt
-.\build-release.ps1 -Version 1.1.0
+.\build-release.ps1 -Version 1.2.0
 ```
 
 输出 `dist\QuickSwitch.exe` 和 `dist\QuickSwitch.exe.sha256`；把 exe 上传到 GitHub Release 即可。绿色版把配置和日志放在 exe 同目录。

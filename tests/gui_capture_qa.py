@@ -116,8 +116,10 @@ def open_editor() -> None:
     dialog = BindingDialog(app, app.config.bindings[0])
 
     def start_recording() -> None:
+        winapi.activate_window(widget_hwnd(dialog))
+        time.sleep(0.5)
         dialog._toggle_record()
-        time.sleep(0.2)
+        time.sleep(0.3)
         press(MODS, VK_F8)
 
     def verify_and_shot() -> None:

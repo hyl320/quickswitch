@@ -31,7 +31,25 @@ from . import winapi
 from .config import Binding, Config, WHEN_ACTIVATE, WHEN_ACTIVATE_OR_LAUNCH, WHEN_LAUNCH
 
 APP_TITLE = "QuickSwitch · 窗口速切"
-APP_VERSION = "1.1.0"
+APP_VERSION = "1.2.0"
+
+# Dense Pro 视觉主题（经典桌面工具风：浅灰、方角、紧凑、深蓝选中）
+THEME = {
+    "bg": "#e8e8e8",
+    "panel": "#ffffff",
+    "header": "#d4d0c8",
+    "border": "#9a9a9a",
+    "border_dark": "#7f7f7f",
+    "text": "#111111",
+    "muted": "#555555",
+    "off": "#888888",
+    "accent": "#0a246a",
+    "ok": "#075e1e",
+    "hook": "#8a4b00",
+    "bad": "#a40000",
+    "ui_family": "Segoe UI",
+    "mono_family": "Consolas",
+}
 ICON_FILENAME = "quickswitch.ico"
 
 STATE_TAGS = {
@@ -55,6 +73,7 @@ class ModalDialog(tk.Toplevel):
     def __init__(self, parent: tk.Misc, title: str) -> None:
         super().__init__(parent)
         self.withdraw()
+        self.configure(bg=THEME["bg"])
         self.title(title)
         self.transient(parent)
         self.resizable(False, False)
@@ -130,11 +149,13 @@ class ToolTip:
             self._tip,
             text=text,
             justify="left",
-            bg="#111827",
-            fg="#f9fafb",
-            padx=10,
-            pady=7,
-            font=("Microsoft YaHei UI", 9),
+            bg="#ffffe1",
+            fg="#111111",
+            relief="solid",
+            bd=1,
+            padx=6,
+            pady=4,
+            font=(THEME["ui_family"], 9),
             wraplength=620,
         ).pack()
         x = int(event.x_root + 16)
@@ -209,9 +230,11 @@ class BindingDialog(ModalDialog):
         ttk.Entry(basic, textvariable=self.var_name, width=32).grid(
             row=0, column=1, sticky="we", padx=(8, 8), pady=4
         )
-        ttk.Checkbutton(basic, text="启用", variable=self.var_enabled).grid(
-            row=0, column=2, sticky="w", pady=4
-        )
+        tk.Checkbutton(
+            basic, text="启用", variable=self.var_enabled,
+            bg=THEME["bg"], activebackground=THEME["bg"], selectcolor="#ffffff",
+            bd=0, highlightthickness=0, font=(THEME["ui_family"], 9),
+        ).grid(row=0, column=2, sticky="w", pady=4)
 
         ttk.Label(basic, text="快捷键").grid(row=1, column=0, sticky="w", pady=4)
         hotkey_row = ttk.Frame(basic)
@@ -224,12 +247,14 @@ class BindingDialog(ModalDialog):
             side="left", padx=(6, 0)
         )
         self.record_hint_label = ttk.Label(
-            hotkey_row, textvariable=self.var_record_hint, foreground="#6b7280"
+            hotkey_row, textvariable=self.var_record_hint, foreground=THEME["muted"]
         )
         self.record_hint_label.pack(side="left", padx=(10, 0))
-        ttk.Checkbutton(basic, text="冲突时覆盖", variable=self.var_override).grid(
-            row=1, column=2, sticky="w", pady=4
-        )
+        tk.Checkbutton(
+            basic, text="冲突时覆盖", variable=self.var_override,
+            bg=THEME["bg"], activebackground=THEME["bg"], selectcolor="#ffffff",
+            bd=0, highlightthickness=0, font=(THEME["ui_family"], 9),
+        ).grid(row=1, column=2, sticky="w", pady=4)
 
         match = ttk.LabelFrame(outer, text="  切换目标（窗口匹配，标题支持正则）  ", padding=10)
         match.pack(fill="x", pady=(10, 0))
@@ -245,7 +270,7 @@ class BindingDialog(ModalDialog):
             ttk.Label(match, text=label).grid(row=row_index, column=0, sticky="w", pady=3)
             entry = ttk.Entry(match, textvariable=var)
             entry.grid(row=row_index, column=1, sticky="we", padx=(8, 8), pady=3)
-            ttk.Label(match, text=hint, foreground="#6b7280").grid(
+            ttk.Label(match, text=hint, foreground=THEME["muted"]).grid(
                 row=row_index, column=2, sticky="w", pady=3
             )
 
@@ -269,7 +294,7 @@ class BindingDialog(ModalDialog):
         ttk.Label(
             fill_row,
             text="点击后 3 秒内切到目标窗口，会自动填入进程名和标题",
-            foreground="#6b7280",
+            foreground=THEME["muted"],
         ).pack(side="left", padx=(8, 0))
 
         launch = ttk.LabelFrame(outer, text="  找不到窗口时（可选）  ", padding=10)
@@ -293,9 +318,11 @@ class BindingDialog(ModalDialog):
             height=4,
             width=46,
             wrap="none",
-            relief="solid",
+            relief=tk.SUNKEN,
             borderwidth=1,
-            font=("Microsoft YaHei UI", 9),
+            bg="#ffffff",
+            fg=THEME["text"],
+            font=(THEME["mono_family"], 9),
         )
         self.launch_text.grid(row=0, column=0, sticky="nsew")
         launch_scroll = ttk.Scrollbar(
@@ -307,7 +334,7 @@ class BindingDialog(ModalDialog):
         ttk.Label(
             launch,
             text="每行一条，按顺序执行\n例如：wt.exe -w 0 nt ...\ncode D:\\proj",
-            foreground="#6b7280",
+            foreground=THEME["muted"],
             justify="left",
         ).grid(row=1, column=2, sticky="nw", pady=3)
 
@@ -336,7 +363,7 @@ class BindingDialog(ModalDialog):
 
         bottom = ttk.Frame(outer)
         bottom.pack(fill="x", pady=(12, 0))
-        ttk.Label(bottom, textvariable=self.var_test, foreground="#2563eb").pack(side="left")
+        ttk.Label(bottom, textvariable=self.var_test, foreground="#005a9e").pack(side="left")
         ttk.Button(bottom, text="取消", width=8, command=self._cancel).pack(side="right")
         ttk.Button(bottom, text="保存", width=8, command=self._save).pack(side="right", padx=(0, 8))
         ttk.Button(bottom, text="测试切换", width=10, command=self._test).pack(
@@ -519,7 +546,11 @@ class BatchBindDialog(ModalDialog):
         )
         info.pack(anchor="w")
 
-        listing = tk.Text(outer, height=min(8, len(self.windows)), width=78, relief="flat", bg="#f8fafc")
+        listing = tk.Text(
+            outer, height=min(8, len(self.windows)), width=78,
+            relief=tk.SUNKEN, bd=1, bg="#ffffff", fg=THEME["text"],
+            font=(THEME["mono_family"], 9),
+        )
         listing.pack(fill="x", pady=(6, 10))
         for window in self.windows:
             listing.insert("end", f"  {window.process}  |  {window.short_title(64)}\n")
@@ -555,7 +586,7 @@ class BatchBindDialog(ModalDialog):
         ttk.Label(
             outer,
             text="说明：绑定使用「进程名 + 固定序号」，窗口关闭/重开可能导致序号变化，可在列表中继续微调。",
-            foreground="#6b7280",
+            foreground=THEME["muted"],
             wraplength=560,
             justify="left",
         ).pack(anchor="w", pady=(8, 0))
@@ -723,35 +754,107 @@ class MainWindow:
         root = self.root
         root.title(APP_TITLE)
         root.geometry("1200x780")
-        root.minsize(1020, 640)
+        root.minsize(1000, 620)
+        root.configure(bg=THEME["bg"])
         try:
             root.iconbitmap(default=icon_path())
         except Exception:
             pass
 
-        for name, size in (("TkDefaultFont", 9), ("TkTextFont", 9), ("TkMenuFont", 9)):
+        for name in ("TkDefaultFont", "TkTextFont", "TkMenuFont"):
             try:
-                tkfont.nametofont(name).configure(family="Microsoft YaHei UI", size=size)
+                tkfont.nametofont(name).configure(family=THEME["ui_family"], size=9)
             except Exception:
                 pass
         try:
-            tkfont.nametofont("TkFixedFont").configure(family="Consolas", size=10)
+            tkfont.nametofont("TkHeadingFont").configure(
+                family=THEME["ui_family"], size=9, weight="bold"
+            )
         except Exception:
             pass
         try:
-            tkfont.nametofont("TkHeadingFont").configure(family="Microsoft YaHei UI", size=9)
+            tkfont.nametofont("TkFixedFont").configure(family=THEME["mono_family"], size=9)
         except Exception:
             pass
 
         style = ttk.Style(root)
         try:
-            style.theme_use("vista")
+            style.theme_use("clam")
         except tk.TclError:
             pass
-        style.configure("Treeview", rowheight=28)
-        style.configure("Treeview.Heading", font=("Microsoft YaHei UI", 9, "bold"))
-        style.configure("Toolbar.TButton", padding=(10, 4))
-        style.configure("Status.TLabel", foreground="#4b5563")
+
+        style.configure(
+            ".", background=THEME["bg"], foreground=THEME["text"],
+            font=(THEME["ui_family"], 9),
+        )
+        style.configure("TFrame", background=THEME["bg"])
+        style.configure("TLabel", background=THEME["bg"], foreground=THEME["text"])
+        style.configure("Muted.TLabel", foreground=THEME["muted"])
+
+        style.configure(
+            "Tool.TButton", padding=(7, 1), font=(THEME["ui_family"], 9),
+            background="#f2f2f2", foreground=THEME["text"],
+            bordercolor=THEME["border"], lightcolor="#ffffff", darkcolor=THEME["border"],
+            relief="raised", borderwidth=1,
+        )
+        style.map("Tool.TButton", background=[("pressed", "#d8d8d8"), ("active", "#fafafa")])
+        style.configure(
+            "Primary.TButton", padding=(7, 1), font=(THEME["ui_family"], 9),
+            background="#dce8f5", foreground=THEME["text"],
+            bordercolor="#6f96c0", lightcolor="#ffffff", darkcolor="#6f96c0",
+            relief="raised", borderwidth=1,
+        )
+        style.map("Primary.TButton", background=[("pressed", "#c5d9ee"), ("active", "#e8f0fa")])
+        style.configure(
+            "TButton", padding=(6, 1), font=(THEME["ui_family"], 9),
+            background="#f2f2f2", foreground=THEME["text"],
+            bordercolor=THEME["border"], lightcolor="#ffffff", darkcolor=THEME["border"],
+            relief="raised", borderwidth=1,
+        )
+        style.configure(
+            "Treeview", background="#ffffff", fieldbackground="#ffffff",
+            foreground=THEME["text"], rowheight=21, borderwidth=1, relief="solid",
+            font=(THEME["ui_family"], 9),
+        )
+        style.configure(
+            "Treeview.Heading", background="#e6e6e6", foreground=THEME["text"],
+            relief="raised", borderwidth=1, font=(THEME["ui_family"], 9, "bold"),
+            padding=(4, 1),
+        )
+        style.map("Treeview.Heading", background=[("active", "#dcdcdc")])
+        style.map(
+            "Treeview",
+            background=[("selected", THEME["accent"])],
+            foreground=[("selected", "#ffffff")],
+        )
+        style.configure(
+            "TLabelframe", background=THEME["bg"], bordercolor=THEME["border"],
+            relief="groove", borderwidth=1,
+        )
+        style.configure(
+            "TLabelframe.Label", background=THEME["bg"], foreground=THEME["text"],
+            font=(THEME["ui_family"], 9, "bold"),
+        )
+        style.configure(
+            "TEntry", fieldbackground="#ffffff", foreground=THEME["text"],
+            bordercolor=THEME["border_dark"], lightcolor="#ffffff", darkcolor=THEME["border"],
+            padding=1,
+        )
+        style.configure(
+            "TSpinbox", fieldbackground="#ffffff", foreground=THEME["text"],
+            bordercolor=THEME["border_dark"], lightcolor="#ffffff", darkcolor=THEME["border"],
+            arrowcolor=THEME["text"], padding=1,
+        )
+        style.configure(
+            "TCombobox", fieldbackground="#ffffff", foreground=THEME["text"],
+            background="#f2f2f2", bordercolor=THEME["border_dark"], arrowcolor=THEME["text"],
+            padding=2,
+        )
+        style.configure("TCheckbutton", background=THEME["bg"], foreground=THEME["text"])
+        style.map("TCheckbutton", background=[("active", THEME["bg"])])
+        style.configure("TRadiobutton", background=THEME["bg"], foreground=THEME["text"])
+        style.map("TRadiobutton", background=[("active", THEME["bg"])])
+        style.configure("TSeparator", background="#b8b8b8")
 
         root.report_callback_exception = self._report_callback_exception
         root.protocol("WM_DELETE_WINDOW", self._on_close)
@@ -807,122 +910,118 @@ class MainWindow:
 
         self.root.config(menu=menubar)
 
-    def _build_ui(self) -> None:
-        header = tk.Frame(self.root, bg="#0f172a", height=58)
-        header.pack(fill="x")
-        header.pack_propagate(False)
+    def _make_pane(self, parent, title: str, hint: str = ""):
+        """带经典灰色标题条的面板，返回 (pane, body, head)。"""
+        pane = tk.Frame(parent, bg=THEME["bg"])
+        pane.configure(highlightthickness=1, highlightbackground=THEME["border"])
+        head = tk.Frame(pane, bg=THEME["header"], height=22)
+        head.pack(fill="x")
+        head.pack_propagate(False)
         tk.Label(
-            header,
-            text="QuickSwitch",
-            bg="#0f172a",
-            fg="#ffffff",
-            font=("Microsoft YaHei UI", 15, "bold"),
-        ).pack(side="left", padx=(16, 8), pady=(10, 0))
-        tk.Label(
-            header,
-            text="把每个 IDE / Agent 窗口绑到顺手的快捷键上",
-            bg="#0f172a",
-            fg="#94a3b8",
-            font=("Microsoft YaHei UI", 9),
-        ).pack(side="left", pady=(16, 0))
-        self.var_header_status = tk.StringVar(value="")
-        tk.Label(
-            header,
-            textvariable=self.var_header_status,
-            bg="#0f172a",
-            fg="#cbd5e1",
-            font=("Microsoft YaHei UI", 9),
-        ).pack(side="right", padx=(0, 16), pady=(16, 0))
+            head, text=title, bg=THEME["header"], fg=THEME["text"],
+            font=(THEME["ui_family"], 9, "bold"),
+        ).pack(side="left", padx=(6, 0))
+        if hint:
+            tk.Label(
+                head, text=hint, bg=THEME["header"], fg=THEME["muted"],
+                font=(THEME["ui_family"], 8),
+            ).pack(side="right", padx=(0, 6))
+        body = tk.Frame(pane, bg=THEME["panel"])
+        body.pack(fill="both", expand=True)
+        return pane, body, head
 
-        toolbar = ttk.Frame(self.root, padding=(12, 8, 12, 4))
+    def _status_segment(self, parent, side: str = "left", expand: bool = False):
+        label = tk.Label(
+            parent, text="", relief=tk.SUNKEN, bd=1, anchor="w",
+            bg="#f2f2f2", fg=THEME["text"], padx=6, pady=0,
+            font=(THEME["ui_family"], 9),
+        )
+        label.pack(side=side, fill="x", expand=expand, padx=(0, 2))
+        return label
+
+    def _build_ui(self) -> None:
+        toolbar = ttk.Frame(self.root, padding=(6, 4, 6, 4))
         toolbar.pack(fill="x")
-        ttk.Button(toolbar, text="＋ 新增绑定", style="Toolbar.TButton", command=self._add_binding).pack(
-            side="left"
-        )
-        ttk.Button(toolbar, text="编辑", style="Toolbar.TButton", command=self._edit_selected).pack(
-            side="left", padx=(6, 0)
-        )
-        ttk.Button(toolbar, text="删除", style="Toolbar.TButton", command=self._delete_selected).pack(
-            side="left", padx=(6, 0)
-        )
+        for text, command in (
+            ("＋ 新增", self._add_binding),
+            ("编辑", self._edit_selected),
+            ("删除", self._delete_selected),
+        ):
+            ttk.Button(toolbar, text=text, command=command, style="Tool.TButton").pack(
+                side="left", padx=(0, 3)
+            )
         ttk.Button(toolbar, text="↑", width=3, command=lambda: self._move_selected(-1)).pack(
-            side="left", padx=(6, 0)
+            side="left", padx=(0, 2)
         )
         ttk.Button(toolbar, text="↓", width=3, command=lambda: self._move_selected(1)).pack(
-            side="left", padx=(2, 0)
+            side="left", padx=(0, 3)
         )
-        ttk.Separator(toolbar, orient="vertical").pack(side="left", fill="y", padx=10)
+        ttk.Separator(toolbar, orient="vertical").pack(side="left", fill="y", padx=8)
         ttk.Button(
-            toolbar, text="保存并应用", style="Toolbar.TButton", command=lambda: self._apply(save=True)
+            toolbar, text="保存并应用", command=lambda: self._apply(save=True),
+            style="Primary.TButton",
         ).pack(side="left")
-        ttk.Button(toolbar, text="重新加载", style="Toolbar.TButton", command=self._reload_config).pack(
-            side="left", padx=(6, 0)
-        )
-        ttk.Checkbutton(
-            toolbar, text="开机自启", variable=self.var_autostart, command=self._toggle_autostart
+        ttk.Button(
+            toolbar, text="重新加载", command=self._reload_config, style="Tool.TButton"
+        ).pack(side="left", padx=(3, 0))
+        tk.Checkbutton(
+            toolbar, text="开机自启", variable=self.var_autostart,
+            command=self._toggle_autostart, bg=THEME["bg"], activebackground=THEME["bg"],
+            selectcolor="#ffffff", bd=0, highlightthickness=0,
+            font=(THEME["ui_family"], 9),
         ).pack(side="right")
 
         self._banner = tk.Frame(
-            self.root, bg="#eff6ff", highlightthickness=1, highlightbackground="#bfdbfe"
+            self.root, bg="#ffffe1", highlightthickness=1, highlightbackground="#c8b560"
         )
         tk.Label(
             self._banner,
             text=(
-                "还没有快捷键绑定：① 点右侧「刷新」 ② 选中目标窗口 ③ 点「绑定所选窗口」，"
+                "还没有快捷键绑定：① 右侧「刷新」 ② 选中目标窗口 ③ 点「绑定所选」，"
                 "再录制快捷键（例如 Ctrl+Alt+1）"
             ),
-            bg="#eff6ff",
-            fg="#1e40af",
-        ).pack(side="left", padx=12, pady=8)
+            bg="#ffffe1", fg="#333333",
+        ).pack(side="left", padx=8, pady=4)
         banner_help = tk.Label(
-            self._banner,
-            text="查看使用说明",
-            bg="#eff6ff",
-            fg="#1d4ed8",
-            cursor="hand2",
-            font=("Microsoft YaHei UI", 9, "underline"),
+            self._banner, text="查看使用说明", bg="#ffffe1", fg="#005a9e",
+            cursor="hand2", font=(THEME["ui_family"], 9, "underline"),
         )
-        banner_help.pack(side="right", padx=(0, 12))
+        banner_help.pack(side="right", padx=(0, 8))
         banner_help.bind("<Button-1>", lambda _e: self._show_help())
-        self._banner.pack(fill="x", padx=12, pady=(4, 0))
+        self._banner.pack(fill="x", padx=4)
 
         paned = ttk.PanedWindow(self.root, orient="horizontal")
         self._paned = paned
-        paned.pack(fill="both", expand=True, padx=12, pady=(2, 4))
+        paned.pack(fill="both", expand=True, padx=4, pady=4)
 
-        # 左：绑定列表
-        left = ttk.Frame(paned)
-        paned.add(left, weight=3)
-        left.columnconfigure(0, weight=1)
-        left.rowconfigure(0, weight=1)
-
-        bind_frame = ttk.LabelFrame(left, text=" 快捷键绑定 ", padding=4)
-        bind_frame.grid(row=0, column=0, sticky="nsew")
-        bind_frame.columnconfigure(0, weight=1)
-        bind_frame.rowconfigure(0, weight=1)
+        # 左：快捷键绑定
+        left_pane, left_body, _ = self._make_pane(paned, "快捷键绑定", "双击编辑 · 右键更多")
+        paned.add(left_pane, weight=3)
+        left_body.columnconfigure(0, weight=1)
+        left_body.rowconfigure(0, weight=1)
 
         self.tree_bindings = ttk.Treeview(
-            bind_frame,
+            left_body,
             columns=("hotkey", "name", "target", "status"),
             show="headings",
             selectmode="browse",
         )
         for column, title, width, stretch in (
-            ("hotkey", "快捷键", 188, False),
-            ("name", "名称", 126, False),
-            ("target", "目标窗口", 205, True),
-            ("status", "状态", 92, False),
+            ("hotkey", "快捷键", 166, False),
+            ("name", "名称", 116, False),
+            ("target", "目标窗口", 164, True),
+            ("status", "状态", 76, False),
         ):
             self.tree_bindings.heading(column, text=title, anchor="w")
             self.tree_bindings.column(column, width=width, stretch=stretch, anchor="w")
         self.tree_bindings.grid(row=0, column=0, sticky="nsew")
-        bind_scroll = ttk.Scrollbar(bind_frame, orient="vertical", command=self.tree_bindings.yview)
+        bind_scroll = ttk.Scrollbar(left_body, orient="vertical", command=self.tree_bindings.yview)
         bind_scroll.grid(row=0, column=1, sticky="ns")
         self.tree_bindings.configure(yscrollcommand=bind_scroll.set)
-        self.tree_bindings.tag_configure("state_ok", foreground="#15803d")
-        self.tree_bindings.tag_configure("state_hook", foreground="#b45309")
-        self.tree_bindings.tag_configure("state_bad", foreground="#b91c1c")
-        self.tree_bindings.tag_configure("state_muted", foreground="#9ca3af")
+        self.tree_bindings.tag_configure("state_ok", foreground=THEME["text"])
+        self.tree_bindings.tag_configure("state_hook", foreground=THEME["hook"])
+        self.tree_bindings.tag_configure("state_bad", foreground=THEME["bad"])
+        self.tree_bindings.tag_configure("state_muted", foreground=THEME["off"])
         ToolTip(self.tree_bindings, self._binding_tooltip)
         self.tree_bindings.bind("<Double-1>", lambda _e: self._edit_selected())
         self.tree_bindings.bind("<Delete>", lambda _e: self._delete_selected())
@@ -934,53 +1033,43 @@ class MainWindow:
         self._bind_menu.add_command(label="删除", command=self._delete_selected)
         self.tree_bindings.bind("<Button-3>", self._show_bind_menu)
 
-        ttk.Label(
-            left,
-            text="双击编辑 · 右键更多操作 · 选中后按 Delete 删除",
-            style="Status.TLabel",
-        ).grid(row=1, column=0, sticky="w", pady=(4, 0))
+        # 右：当前窗口
+        right_pane, right_body, _ = self._make_pane(paned, "当前窗口", "双击绑定")
+        paned.add(right_pane, weight=2)
+        right_body.columnconfigure(0, weight=1)
+        right_body.rowconfigure(1, weight=1)
 
-        # 右：窗口列表
-        right = ttk.Frame(paned)
-        paned.add(right, weight=2)
-        right.columnconfigure(0, weight=1)
-        right.rowconfigure(0, weight=1)
-
-        win_frame = ttk.LabelFrame(right, text=" 当前窗口 ", padding=4)
-        win_frame.grid(row=0, column=0, sticky="nsew")
-        win_frame.columnconfigure(0, weight=1)
-        win_frame.rowconfigure(1, weight=1)
-
-        filter_row = ttk.Frame(win_frame)
-        filter_row.grid(row=0, column=0, columnspan=2, sticky="we", pady=(0, 4))
-        ttk.Label(filter_row, text="过滤").pack(side="left")
+        filter_row = tk.Frame(right_body, bg=THEME["panel"])
+        filter_row.grid(row=0, column=0, columnspan=2, sticky="we", padx=3, pady=3)
+        tk.Label(filter_row, text="过滤", bg=THEME["panel"], fg=THEME["muted"]).pack(side="left")
         self.var_filter = tk.StringVar()
-        filter_entry = ttk.Entry(filter_row, textvariable=self.var_filter, width=22)
-        filter_entry.pack(side="left", padx=(6, 6))
+        ttk.Entry(filter_row, textvariable=self.var_filter, width=16).pack(
+            side="left", padx=(4, 4)
+        )
         self.var_filter.trace_add("write", lambda *_a: self._populate_window_tree())
-        ttk.Button(filter_row, text="刷新", width=6, command=self._refresh_windows).pack(side="left")
-        ttk.Button(
-            filter_row, text="绑定所选窗口", width=13, command=self._bind_selected_windows
-        ).pack(side="right")
+        ttk.Button(filter_row, text="刷新", command=self._refresh_windows).pack(side="left")
+        ttk.Button(filter_row, text="绑定所选", command=self._bind_selected_windows).pack(
+            side="right"
+        )
 
         self.tree_windows = ttk.Treeview(
-            win_frame,
+            right_body,
             columns=("title", "process", "min"),
             show="headings",
             selectmode="extended",
         )
         for column, title, width, stretch in (
-            ("title", "窗口标题", 200, True),
-            ("process", "进程", 164, False),
-            ("min", "最小化", 64, False),
+            ("title", "窗口标题", 150, True),
+            ("process", "进程", 150, False),
+            ("min", "最小化", 74, False),
         ):
             self.tree_windows.heading(column, text=title, anchor="w")
             self.tree_windows.column(column, width=width, stretch=stretch, anchor="w")
         self.tree_windows.grid(row=1, column=0, sticky="nsew")
-        win_scroll = ttk.Scrollbar(win_frame, orient="vertical", command=self.tree_windows.yview)
+        win_scroll = ttk.Scrollbar(right_body, orient="vertical", command=self.tree_windows.yview)
         win_scroll.grid(row=1, column=1, sticky="ns")
         self.tree_windows.configure(yscrollcommand=win_scroll.set)
-        self.tree_windows.tag_configure("minimized", foreground="#6b7280")
+        self.tree_windows.tag_configure("minimized", foreground=THEME["off"])
         ToolTip(self.tree_windows, self._window_tooltip)
         self.tree_windows.bind("<Double-1>", lambda _e: self._bind_selected_windows())
 
@@ -991,51 +1080,45 @@ class MainWindow:
         self._window_menu.add_command(label="复制窗口标题", command=self._copy_window_title)
         self.tree_windows.bind("<Button-3>", self._show_window_menu)
 
-        # 日志
-        log_frame = ttk.LabelFrame(self.root, text=" 运行日志 ", padding=6)
-        log_frame.pack(fill="x", padx=12, pady=(2, 4))
-        log_frame.columnconfigure(0, weight=1)
+        # 运行日志
+        log_pane, log_body, log_head = self._make_pane(self.root, "运行日志")
+        log_pane.pack(fill="x", padx=4, pady=(0, 4))
+        ttk.Button(log_head, text="清空", command=self._clear_log, style="Tool.TButton").pack(
+            side="right", padx=(3, 3)
+        )
+        ttk.Button(log_head, text="日志文件", command=self._open_log_file, style="Tool.TButton").pack(
+            side="right", padx=(3, 0)
+        )
+        log_body.columnconfigure(0, weight=1)
         self.log_text = tk.Text(
-            log_frame,
-            height=6,
-            wrap="none",
-            relief="flat",
-            bg="#f8fafc",
-            fg="#111827",
-            font=("Microsoft YaHei UI", 9),
-            state="disabled",
+            log_body, height=5, wrap="none", relief=tk.SUNKEN, bd=1,
+            bg="#ffffff", fg=THEME["text"], font=(THEME["mono_family"], 9),
+            insertbackground=THEME["text"], state="disabled",
         )
         self.log_text.grid(row=0, column=0, sticky="nsew")
-        log_scroll = ttk.Scrollbar(log_frame, orient="vertical", command=self.log_text.yview)
+        log_scroll = ttk.Scrollbar(log_body, orient="vertical", command=self.log_text.yview)
         log_scroll.grid(row=0, column=1, sticky="ns")
         self.log_text.configure(yscrollcommand=log_scroll.set)
-        self.log_text.tag_configure("time", foreground="#94a3b8")
-        self.log_text.tag_configure("warn", foreground="#b45309")
-        self.log_text.tag_configure("error", foreground="#b91c1c")
-        logs_buttons = ttk.Frame(log_frame)
-        logs_buttons.grid(row=0, column=2, sticky="ns", padx=(6, 0))
-        ttk.Button(logs_buttons, text="清空", width=6, command=self._clear_log).pack(fill="x")
-        ttk.Button(logs_buttons, text="日志文件", width=8, command=self._open_log_file).pack(
-            fill="x", pady=(4, 0)
-        )
+        self.log_text.tag_configure("time", foreground=THEME["off"])
+        self.log_text.tag_configure("warn", foreground=THEME["hook"])
+        self.log_text.tag_configure("error", foreground=THEME["bad"])
 
-        status_bar = ttk.Frame(self.root, padding=(12, 0, 12, 6))
-        status_bar.pack(fill="x")
-        self.var_status_left = tk.StringVar(value="")
-        self.var_status_right = tk.StringVar(value="")
-        ttk.Label(status_bar, textvariable=self.var_status_left, style="Status.TLabel").pack(
-            side="left"
-        )
-        ttk.Label(status_bar, textvariable=self.var_status_right, style="Status.TLabel").pack(
-            side="right"
-        )
+        # 状态栏（分段沉雕面板）
+        status_bar = tk.Frame(self.root, bg=THEME["bg"])
+        status_bar.pack(fill="x", padx=4, pady=(0, 4))
+        self.seg_config = self._status_segment(status_bar, expand=True)
+        self.seg_ok = self._status_segment(status_bar)
+        self.seg_hook = self._status_segment(status_bar)
+        self.seg_off = self._status_segment(status_bar)
+        self.seg_bad = self._status_segment(status_bar)
+        self.seg_windows = self._status_segment(status_bar)
+        self.seg_right = self._status_segment(status_bar, side="right")
 
         self.root.bind("<Control-s>", lambda _e: self._apply(save=True))
         self.root.bind("<Control-r>", lambda _e: self._reload_config())
         self.root.bind("<F5>", lambda _e: self._refresh_windows())
 
-        self.var_status_left.set(f"配置：{config_mod.config_path()}")
-        self.var_header_status.set("正在初始化…")
+        self._update_status()
 
     # -- 日志 ---------------------------------------------------------------
     def log(self, message: str, level: str = "info") -> None:
@@ -1167,7 +1250,7 @@ class MainWindow:
         if self.config.bindings:
             self._banner.pack_forget()
         else:
-            self._banner.pack(fill="x", padx=12, pady=(4, 0), before=self._paned)
+            self._banner.pack(fill="x", padx=4, before=self._paned)
         self._update_status()
 
     def _binding_tooltip(self, item: str) -> str:
@@ -1217,12 +1300,14 @@ class MainWindow:
         bad = sum(1 for status in statuses if status.state in ("conflict", "error"))
         enabled = sum(1 for binding in self.config.bindings if binding.enabled)
         hook = sum(1 for status in statuses if status.state == "hook")
-        text = f"启用 {enabled} 个 · 正常 {ok} 个 · 异常 {bad} 个"
-        if hook:
-            text += f" · 钩子接管 {hook} 个"
-        self.var_header_status.set(text)
-        tray = "托盘已就绪" if self._tray_ok else "托盘不可用"
-        self.var_status_right.set(f"{tray} · 窗口 {len(self._windows)} 个 · v{APP_VERSION}")
+        self.seg_config.configure(text=f"配置：{config_mod.config_path()}")
+        self.seg_ok.configure(text=f"已注册 {ok}")
+        self.seg_hook.configure(text=f"钩子 {hook}")
+        self.seg_off.configure(text=f"启用 {enabled}")
+        self.seg_bad.configure(text=f"异常 {bad}")
+        self.seg_windows.configure(text=f"窗口 {len(self._windows)}")
+        tray = "托盘就绪" if self._tray_ok else "托盘不可用"
+        self.seg_right.configure(text=f"{tray} · v{APP_VERSION}")
 
     def hotkey_taken(self, hotkey: str, exclude_id: str | None) -> bool:
         try:
