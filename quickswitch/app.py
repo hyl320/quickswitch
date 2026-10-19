@@ -31,7 +31,7 @@ from . import winapi
 from .config import Binding, Config, WHEN_ACTIVATE, WHEN_ACTIVATE_OR_LAUNCH, WHEN_LAUNCH
 
 APP_TITLE = "QuickSwitch · 窗口速切"
-APP_VERSION = "1.2.1"
+APP_VERSION = "1.2.2"
 
 # Dense Pro 视觉主题（经典桌面工具风：浅灰、方角、紧凑、深蓝选中）
 THEME = {
@@ -50,6 +50,26 @@ THEME = {
     "ui_family": "Segoe UI",
     "mono_family": "Consolas",
 }
+
+
+def _work_area():
+    """返回主屏工作区（不含任务栏）的 (left, top, right, bottom)。"""
+    class _Rect(ctypes.Structure):
+        _fields_ = [
+            ("left", ctypes.c_long),
+            ("top", ctypes.c_long),
+            ("right", ctypes.c_long),
+            ("bottom", ctypes.c_long),
+        ]
+
+    rect = _Rect()
+    try:
+        ctypes.windll.user32.SystemParametersInfoW(0x0030, 0, ctypes.byref(rect), 0)
+        if rect.right > rect.left and rect.bottom > rect.top:
+            return rect.left, rect.top, rect.right, rect.bottom
+    except Exception:
+        pass
+    return 0, 0, ctypes.windll.user32.GetSystemMetrics(0), ctypes.windll.user32.GetSystemMetrics(1)
 ICON_FILENAME = "quickswitch.ico"
 
 STATE_TAGS = {
@@ -699,6 +719,8 @@ class MainWindow:
         self._capture_target = None
         self._tray_ok = False
         self._tray_notified = False
+        self._toast = None
+        self._toast_icon = None
         self._busy: set[str] = set()
         self._busy_lock = threading.Lock()
         self._config_error = ""
@@ -1805,12 +1827,79 @@ class MainWindow:
         )
 
     # -- 退出 ---------------------------------------------------------------
+    def _show_inapp_toast(self, title: str, message: str, duration: int = 3600) -> None:
+        """应用内轻提示：不经过系统通知，避免标题显示成 Python。"""
+        self._close_toast()
+        try:
+            toast = tk.Toplevel(self.root)
+            toast.overrideredirect(True)
+            toast.attributes("-topmost", True)
+            bg = "#f4f4f4"
+            toast.configure(bg=bg)
+            outer = tk.Frame(
+                toast, bg=bg, highlightthickness=1, highlightbackground=THEME["border"]
+            )
+            outer.pack(fill="both", expand=True)
+
+            png = os.path.join(config_mod.resource_dir(), "assets", "quickswitch-64.png")
+            icon_img = None
+            if os.path.exists(png):
+                try:
+                    raw = tk.PhotoImage(file=png)
+                    icon_img = raw.subsample(2, 2) if raw.width() >= 56 else raw
+                except Exception:
+                    icon_img = None
+            if icon_img is not None:
+                self._toast_icon = icon_img
+                tk.Label(outer, image=icon_img, bg=bg).grid(
+                    row=0, column=0, rowspan=2, padx=(10, 8), pady=10, sticky="n"
+                )
+            tk.Label(
+                outer, text=title, bg=bg, fg=THEME["text"],
+                font=(THEME["ui_family"], 9, "bold"), anchor="w",
+            ).grid(row=0, column=1, sticky="we", padx=(0, 12), pady=(10, 0))
+            tk.Label(
+                outer, text=message, bg=bg, fg=THEME["muted"],
+                font=(THEME["ui_family"], 9), anchor="w", justify="left", wraplength=300,
+            ).grid(row=1, column=1, sticky="we", padx=(0, 12), pady=(2, 10))
+
+            toast.update_idletasks()
+            width = max(toast.winfo_reqwidth(), 280)
+            height = toast.winfo_reqheight()
+            left, top, right, bottom = _work_area()
+            x = max(left + 8, right - width - 16)
+            y = max(top + 8, bottom - height - 16)
+            toast.geometry(f"{width}x{height}+{x}+{y}")
+            toast.bind("<Button-1>", lambda _e: self._toast_clicked())
+            self._toast = toast
+            self.root.after(int(duration), self._close_toast)
+        except Exception as exc:
+            self.log(f"显示提示失败：{exc}", "warn")
+
+    def _toast_clicked(self) -> None:
+        self._close_toast()
+        self._show_window()
+
+    def _close_toast(self) -> None:
+        toast = self._toast
+        self._toast = None
+        if toast is not None:
+            try:
+                toast.destroy()
+            except Exception:
+                pass
+
     def _on_close(self) -> None:
         if self._tray_ok and self.config.close_to_tray and not self._quitting:
             self.root.withdraw()
             if self.config.notifications and not self._tray_notified:
                 self._tray_notified = True
-                self.manager.notify("QuickSwitch 仍在运行", "双击托盘图标可以重新打开窗口。")
+                self.root.after(
+                    120,
+                    lambda: self._show_inapp_toast(
+                        "QuickSwitch 仍在运行", "双击托盘图标可重新打开窗口"
+                    ),
+                )
             return
         self._quit()
 
@@ -1818,6 +1907,7 @@ class MainWindow:
         if self._quitting:
             return
         self._quitting = True
+        self._close_toast()
         try:
             self.manager.stop()
         except Exception:
